@@ -21,9 +21,9 @@ GT honor code violation.
   		  	   		  		 			  		 			     			  	 
 -----do not edit anything above this line---  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
-Student Name: Tucker Balch (replace with your name)  		  	   		  		 			  		 			     			  	 
-GT User ID: tb34 (replace with your User ID)  		  	   		  		 			  		 			     			  	 
-GT ID: 900897987 (replace with your GT ID)  		  	   		  		 			  		 			     			  	 
+Student Name: Vaishnavi Sanjeev  		  	   		  		 			  		 			     			  	 
+GT User ID: vsanjeev6  		  	   		  		 			  		 			     			  	 
+GT ID: 903797718  		  	   		  		 			  		 			     			  	 
 """  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
 import numpy as np  		  	   		  		 			  		 			     			  	 
@@ -34,7 +34,7 @@ def author():
     :return: The GT username of the student  		  	   		  		 			  		 			     			  	 
     :rtype: str  		  	   		  		 			  		 			     			  	 
     """  		  	   		  		 			  		 			     			  	 
-    return "tb34"  # replace tb34 with your Georgia Tech username.  		  	   		  		 			  		 			     			  	 
+    return "vsanjeev6"  # replace tb34 with your Georgia Tech username.
   		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
 def gtid():  		  	   		  		 			  		 			     			  	 
@@ -42,7 +42,7 @@ def gtid():
     :return: The GT ID of the student  		  	   		  		 			  		 			     			  	 
     :rtype: int  		  	   		  		 			  		 			     			  	 
     """  		  	   		  		 			  		 			     			  	 
-    return 900897987  # replace with your GT ID number  		  	   		  		 			  		 			     			  	 
+    return 903797718  # replace with your GT ID number
   		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
 def get_spin_result(win_prob):  		  	   		  		 			  		 			     			  	 
@@ -67,8 +67,32 @@ def test_code():
     win_prob = 0.60  # set appropriately to the probability of a win  		  	   		  		 			  		 			     			  	 
     np.random.seed(gtid())  # do this only once  		  	   		  		 			  		 			     			  	 
     print(get_spin_result(win_prob))  # test the roulette spin  		  	   		  		 			  		 			     			  	 
-    # add your code here to implement the experiments  		  	   		  		 			  		 			     			  	 
+    # add your code here to implement the experiments
+    betting_strategy(win_prob)
   		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
+
+def betting_strategy(win_prob):
+    episode_winnings = 0
+
+    while episode_winnings < 80:
+        won = False
+        bet_amount = 1
+        while not won:
+            #wager on black?
+            won = get_spin_result(win_prob)
+            if won == True:
+                episode_winnings += bet_amount
+                print(episode_winnings)
+            else:
+                episode_winnings -= bet_amount
+                bet_amount *= 2
+                print(episode_winnings)
+                print(bet_amount)
+
+
+
+
+
 if __name__ == "__main__":  		  	   		  		 			  		 			     			  	 
-    test_code()  		  	   		  		 			  		 			     			  	 
+    test_code()
+
