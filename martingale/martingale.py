@@ -162,7 +162,7 @@ def figure3(win_prob, real_sim, bankroll):
         plotting_utility_function("Figure 3 - Median & Standard Deviations for 1000 episodes",
                                   [0, 300, -256, 100], "Number of Spins", "Cumulative Winnings", "figure3.png")
     else:
-        plotting_utility_function("Figure 5 - Median & Standard Deviations for 1000 episodes",
+        plotting_utility_function("Figure 5 - Median & Standard Deviations for 1000 episodes of Real Simulator",
                                   [0, 300, -256, 100], "Number of Spins", "Cumulative Winnings", "figure5.png")
 def figure4_and_5(win_prob, real_sim, bankroll):
     figure3(win_prob, real_sim, bankroll)
