@@ -71,11 +71,14 @@ def test_code():
     #betting_strategy(win_prob)
     print(win_prob)
     figure1(win_prob)
+    figure3(win_prob)
+
   		  	   		  		 			  		 			     			  	 
 
 def betting_strategy(win_prob):
     episode_winnings = 0
-    episode_array = np.full((1000),80)
+    #Structuring the NumPy Array hint:: Each episode consists of 1000 spins plus the initial value of 0 in the first column (1001 columns in total)
+    episode_array = np.full((1001),80)
     #print(episode_array, episode_array.shape, episode_array.size)
     bet_number = 0
 
@@ -84,8 +87,7 @@ def betting_strategy(win_prob):
         won = False
         bet_amount = 1
         while not won:
-            #wager on black?
-            if bet_number >= 1000:
+            if bet_number >= 1001:
                 print(episode_array)
                 return episode_array
             episode_array[bet_number] = episode_winnings
@@ -107,17 +109,51 @@ def betting_strategy(win_prob):
     #if episode_winnings == 80:
         #print(episode_array[999], episode_array.shape , episode_array.size)
 
-
 def figure1(win_prob):
     for i in range(10):
         cur_episode = betting_strategy(win_prob)
-        plt.plot(cur_episode)
+        plt.plot(cur_episode, label='Episode %s' % i)
 
-    plt.title("Figure 1 - 10 episodes of 1000 successive bets")
-    plt.axis([0, 300, -256, 100])
-    plt.xlabel("Number of Spins")
-    plt.ylabel("Cumulative Winnings")
-    plt.savefig("figure1.png")
+    plotting_utility_function("Figure 1 - 10 episodes of the betting strategy", [0, 300, -256, 100], "Number of Spins", "Cumulative Winnings", "figure1.png")
+
+def figure2(win_prob):
+    # Rows is number of episodes; columns is number of spins per episode (1000) + initial value in 1st column
+    cumulative_array = np.zeros((1000,1001))
+
+    for i in range(1000):
+        cur_episode = betting_strategy(win_prob)
+        cumulative_array[i] = cur_episode
+
+    mean_array = np.mean(cumulative_array, axis = 0)
+    std_dev_array = np.std(cumulative_array, axis = 0)
+    mean_plus_std = mean_array + std_dev_array
+    mean_minus_std = mean_array - std_dev_array
+
+    plt.plot(mean_array, label="Mean")
+    plt.plot(mean_plus_std, label="Mean + Standard Deviation")
+    plt.plot(mean_minus_std, label="Mean - Standard Deviation")
+
+    plotting_utility_function("Figure 2 - Mean & Standard Deviations for 1000 episodes", [0, 300, -256, 100], "Number of Spins", "Cumulative Winnings", "figure2.png")
+    return cumulative_array,std_dev_array
+def figure3(win_prob):
+    same_cumulative_array, same_std_dev_array = figure2(win_prob)
+    median_array = np.median(same_cumulative_array, axis=0)
+    median_plus_std = median_array + same_std_dev_array
+    median_minus_std = median_array - same_std_dev_array
+
+    plt.plot(median_array, label="Median")
+    plt.plot(median_plus_std, label="Median + Standard Deviation")
+    plt.plot(median_minus_std, label="Median - Standard Deviation")
+    plotting_utility_function("Figure 3 - Median & Standard Deviations for 1000 episodes", [0, 300, -256, 100], "Number of Spins", "Cumulative Winnings", "figure3.png")
+
+def plotting_utility_function(title,axes,xlabel,ylabel,fig_name):
+
+    plt.title(title)
+    plt.axis(axes)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend()
+    plt.savefig(fig_name)
     plt.clf()
 
 if __name__ == "__main__":  		  	   		  		 			  		 			     			  	 
