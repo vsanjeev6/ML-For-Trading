@@ -80,14 +80,15 @@ def betting_strategy(win_prob):
         while not won:
             #wager on black?
             won = get_spin_result(win_prob)
+            print("spin result", won)
             if won == True:
                 episode_winnings += bet_amount
-                print(episode_winnings)
+                print("won", episode_winnings)
             else:
                 episode_winnings -= bet_amount
                 bet_amount *= 2
-                print(episode_winnings)
-                print(bet_amount)
+                print("lost", episode_winnings)
+                print("bet_amt", bet_amount)
 
 
 
