@@ -88,7 +88,7 @@ def betting_strategy(win_prob):
                 episode_winnings -= bet_amount
                 bet_amount *= 2
                 print("lost", episode_winnings)
-                print("bet_amt", bet_amount)
+                print("bet_amt=", bet_amount)
 
 
 
