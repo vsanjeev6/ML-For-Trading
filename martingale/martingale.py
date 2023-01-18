@@ -34,7 +34,7 @@ def author():
     :return: The GT username of the student  		  	   		  		 			  		 			     			  	 
     :rtype: str  		  	   		  		 			  		 			     			  	 
     """  		  	   		  		 			  		 			     			  	 
-    return "vsanjeev6"  # replace tb34 with your Georgia Tech username.
+    return "vsanjeev6"
   		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
 def gtid():  		  	   		  		 			  		 			     			  	 
@@ -42,7 +42,7 @@ def gtid():
     :return: The GT ID of the student  		  	   		  		 			  		 			     			  	 
     :rtype: int  		  	   		  		 			  		 			     			  	 
     """  		  	   		  		 			  		 			     			  	 
-    return 903797718  # replace with your GT ID number
+    return 903797718
   		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
 def get_spin_result(win_prob):  		  	   		  		 			  		 			     			  	 
@@ -63,65 +63,72 @@ def get_spin_result(win_prob):
 def test_code():  		  	   		  		 			  		 			     			  	 
     """  		  	   		  		 			  		 			     			  	 
     Method to test your code  		  	   		  		 			  		 			     			  	 
-    """  		  	   		  		 			  		 			     			  	 
-    win_prob = 18.0/38.0  # The probability of win is for 18 black spaces that define a win and 2 green spaces (American Roulette)
+    """
+    # The probability of win is for 18 black spaces that define a win and 2 green spaces (American Roulette)
+    win_prob = 18.0/38.0
+    bankroll = 256
     np.random.seed(gtid())  # do this only once  		  	   		  		 			  		 			     			  	 
     print(get_spin_result(win_prob))  # test the roulette spin  		  	   		  		 			  		 			     			  	 
-    # add your code here to implement the experiments
-    #betting_strategy(win_prob)
-    print(win_prob)
-    figure1(win_prob)
-    figure3(win_prob)
 
-  		  	   		  		 			  		 			     			  	 
+    #print(win_prob)
+    figure1(win_prob, 0, bankroll)
+    figure3(win_prob, 0, bankroll)
+    figure4_and_5(win_prob, 1, bankroll)
 
-def betting_strategy(win_prob):
+def betting_strategy(win_prob, real_sim, bankroll):
     episode_winnings = 0
+
     #Structuring the NumPy Array hint:: Each episode consists of 1000 spins plus the initial value of 0 in the first column (1001 columns in total)
     episode_array = np.full((1001),80)
+
     #print(episode_array, episode_array.shape, episode_array.size)
+
     bet_number = 0
 
     while episode_winnings < 80:
-        print("while 1")
+        #print("while 1")
         won = False
         bet_amount = 1
         while not won:
             if bet_number >= 1001:
-                print(episode_array)
+                #print(episode_array)
                 return episode_array
             episode_array[bet_number] = episode_winnings
             bet_number += 1
             won = get_spin_result(win_prob)
-            print("while 2")
-            print("spin result", won)
+            #print("while 2")
+            #print("spin result", won)
             if won == True:
                 episode_winnings += bet_amount
-                print("won", episode_winnings)
+                #print("won", episode_winnings)
             else:
                 episode_winnings -= bet_amount
                 bet_amount *= 2
-                print("lost", episode_winnings)
-                print("bet_amt=", bet_amount)
+                #print("lost", episode_winnings)
+                #print("bet_amt=", bet_amount)
+                if real_sim:
+                    if episode_winnings == -bankroll:
+                        episode_array[bet_number:] = episode_winnings
+                        return episode_array
+                    if episode_winnings + bankroll < bet_amount:
+                        bet_amount = episode_winnings + bankroll
 
     return episode_array
 
-    #if episode_winnings == 80:
-        #print(episode_array[999], episode_array.shape , episode_array.size)
-
-def figure1(win_prob):
+def figure1(win_prob, real_sim, bankroll):
     for i in range(10):
-        cur_episode = betting_strategy(win_prob)
+        cur_episode = betting_strategy(win_prob,real_sim, bankroll)
         plt.plot(cur_episode, label='Episode %s' % i)
 
-    plotting_utility_function("Figure 1 - 10 episodes of the betting strategy", [0, 300, -256, 100], "Number of Spins", "Cumulative Winnings", "figure1.png")
+    plotting_utility_function("Figure 1 - 10 episodes of the betting strategy",
+                              [0, 300, -256, 100], "Number of Spins", "Cumulative Winnings", "figure1.png")
 
-def figure2(win_prob):
+def figure2(win_prob, real_sim, bankroll):
     # Rows is number of episodes; columns is number of spins per episode (1000) + initial value in 1st column
     cumulative_array = np.zeros((1000,1001))
 
     for i in range(1000):
-        cur_episode = betting_strategy(win_prob)
+        cur_episode = betting_strategy(win_prob,real_sim, bankroll)
         cumulative_array[i] = cur_episode
 
     mean_array = np.mean(cumulative_array, axis = 0)
@@ -133,10 +140,16 @@ def figure2(win_prob):
     plt.plot(mean_plus_std, label="Mean + Standard Deviation")
     plt.plot(mean_minus_std, label="Mean - Standard Deviation")
 
-    plotting_utility_function("Figure 2 - Mean & Standard Deviations for 1000 episodes", [0, 300, -256, 100], "Number of Spins", "Cumulative Winnings", "figure2.png")
+    if real_sim == 0:
+        plotting_utility_function("Figure 2 - Mean & Standard Deviations for 1000 episodes",
+                                  [0, 300, -256, 100], "Number of Spins", "Cumulative Winnings", "figure2.png")
+    else:
+        plotting_utility_function("Figure 4 - Mean & Standard Deviations for 1000 episodes of Real Simulator",
+                                  [0, 300, -256, 100], "Number of Spins", "Cumulative Winnings", "figure4.png")
+
     return cumulative_array,std_dev_array
-def figure3(win_prob):
-    same_cumulative_array, same_std_dev_array = figure2(win_prob)
+def figure3(win_prob, real_sim, bankroll):
+    same_cumulative_array, same_std_dev_array = figure2(win_prob, real_sim, bankroll)
     median_array = np.median(same_cumulative_array, axis=0)
     median_plus_std = median_array + same_std_dev_array
     median_minus_std = median_array - same_std_dev_array
@@ -144,7 +157,15 @@ def figure3(win_prob):
     plt.plot(median_array, label="Median")
     plt.plot(median_plus_std, label="Median + Standard Deviation")
     plt.plot(median_minus_std, label="Median - Standard Deviation")
-    plotting_utility_function("Figure 3 - Median & Standard Deviations for 1000 episodes", [0, 300, -256, 100], "Number of Spins", "Cumulative Winnings", "figure3.png")
+
+    if real_sim == 0:
+        plotting_utility_function("Figure 3 - Median & Standard Deviations for 1000 episodes",
+                                  [0, 300, -256, 100], "Number of Spins", "Cumulative Winnings", "figure3.png")
+    else:
+        plotting_utility_function("Figure 5 - Median & Standard Deviations for 1000 episodes",
+                                  [0, 300, -256, 100], "Number of Spins", "Cumulative Winnings", "figure5.png")
+def figure4_and_5(win_prob, real_sim, bankroll):
+    figure3(win_prob, real_sim, bankroll)
 
 def plotting_utility_function(title,axes,xlabel,ylabel,fig_name):
 
