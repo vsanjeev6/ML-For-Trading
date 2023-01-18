@@ -26,8 +26,8 @@ GT User ID: vsanjeev6
 GT ID: 903797718  		  	   		  		 			  		 			     			  	 
 """  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
-import numpy as np  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
+import numpy as np
+import matplotlib.pyplot as plt
   		  	   		  		 			  		 			     			  	 
 def author():  		  	   		  		 			  		 			     			  	 
     """  		  	   		  		 			  		 			     			  	 
@@ -64,22 +64,34 @@ def test_code():
     """  		  	   		  		 			  		 			     			  	 
     Method to test your code  		  	   		  		 			  		 			     			  	 
     """  		  	   		  		 			  		 			     			  	 
-    win_prob = 0.60  # set appropriately to the probability of a win  		  	   		  		 			  		 			     			  	 
+    win_prob = 18.0/38.0  # The probability of win is for 18 black spaces that define a win and 2 green spaces (American Roulette)
     np.random.seed(gtid())  # do this only once  		  	   		  		 			  		 			     			  	 
     print(get_spin_result(win_prob))  # test the roulette spin  		  	   		  		 			  		 			     			  	 
     # add your code here to implement the experiments
-    betting_strategy(win_prob)
+    #betting_strategy(win_prob)
+    print(win_prob)
+    figure1(win_prob)
   		  	   		  		 			  		 			     			  	 
 
 def betting_strategy(win_prob):
     episode_winnings = 0
+    episode_array = np.full((1000),80)
+    #print(episode_array, episode_array.shape, episode_array.size)
+    bet_number = 0
 
     while episode_winnings < 80:
+        print("while 1")
         won = False
         bet_amount = 1
         while not won:
             #wager on black?
+            if bet_number >= 1000:
+                print(episode_array)
+                return episode_array
+            episode_array[bet_number] = episode_winnings
+            bet_number += 1
             won = get_spin_result(win_prob)
+            print("while 2")
             print("spin result", won)
             if won == True:
                 episode_winnings += bet_amount
@@ -90,9 +102,23 @@ def betting_strategy(win_prob):
                 print("lost", episode_winnings)
                 print("bet_amt=", bet_amount)
 
+    return episode_array
+
+    #if episode_winnings == 80:
+        #print(episode_array[999], episode_array.shape , episode_array.size)
 
 
+def figure1(win_prob):
+    for i in range(10):
+        cur_episode = betting_strategy(win_prob)
+        plt.plot(cur_episode)
 
+    plt.title("Figure 1 - 10 episodes of 1000 successive bets")
+    plt.axis([0, 300, -256, 100])
+    plt.xlabel("Number of Spins")
+    plt.ylabel("Cumulative Winnings")
+    plt.savefig("figure1.png")
+    plt.clf()
 
 if __name__ == "__main__":  		  	   		  		 			  		 			     			  	 
     test_code()
