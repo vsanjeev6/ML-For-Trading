@@ -68,7 +68,7 @@ def test_code():
     win_prob = 18.0/38.0
     bankroll = 256
     np.random.seed(gtid())  # do this only once  		  	   		  		 			  		 			     			  	 
-    print(get_spin_result(win_prob))  # test the roulette spin  		  	   		  		 			  		 			     			  	 
+    #print(get_spin_result(win_prob))  # test the roulette spin
 
     #print(win_prob)
     figure1(win_prob, 0, bankroll)
