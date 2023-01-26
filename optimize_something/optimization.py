@@ -91,7 +91,7 @@ def optimize_portfolio(
     daily_port_val, cr, adr, sddr = portfolio_calculations(optimal_allocation, prices)
     #Don't need to reverse sign of SR except when calling the minimize() function
     sr = -calc_SR(optimal_allocation, prices)
-    # print(bnds, cons, optimal_allocation)
+    #print(bnds, cons, optimal_allocation)
     #print(optimal_allocation, sum(optimal_allocation))
 
     # Get daily portfolio value  		  	   		  		 			  		 			     			  	 
@@ -130,8 +130,8 @@ def test_code():
     #print(f"End Date: {end_date}")
     #print(f"Symbols: {symbols}")
     #print(f"Allocations:{allocations}")
-    print(f"Sharpe Ratio: {sr}")
-    print(f"Volatility (stdev of daily returns): {sddr}")
+    #print(f"Sharpe Ratio: {sr}")
+    #print(f"Volatility (stdev of daily returns): {sddr}")
     #print(f"Average Daily Return: {adr}")
     #print(f"Cumulative Return: {cr}")
 
