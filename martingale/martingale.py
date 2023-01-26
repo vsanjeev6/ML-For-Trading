@@ -70,7 +70,6 @@ def test_code():
     np.random.seed(gtid())  # do this only once  		  	   		  		 			  		 			     			  	 
     #print(get_spin_result(win_prob))  # test the roulette spin
 
-    #print(win_prob)
     figure1(win_prob, 0, bankroll)
     figure3(win_prob, 0, bankroll)
     figure4_and_5(win_prob, 1, bankroll)
@@ -85,8 +84,8 @@ def betting_strategy(win_prob, real_sim, bankroll):
 
     bet_number = 0
 
+
     while episode_winnings < 80:
-        #print("while 1")
         won = False
         bet_amount = 1
         while not won:
@@ -96,29 +95,28 @@ def betting_strategy(win_prob, real_sim, bankroll):
             episode_array[bet_number] = episode_winnings
             bet_number += 1
             won = get_spin_result(win_prob)
-            #print("while 2")
-            #print("spin result", won)
             if won == True:
                 episode_winnings += bet_amount
-                #print("won", episode_winnings)
             else:
                 episode_winnings -= bet_amount
                 bet_amount *= 2
-                #print("lost", episode_winnings)
-                #print("bet_amt=", bet_amount)
                 if real_sim:
                     if episode_winnings == -bankroll:
                         episode_array[bet_number:] = episode_winnings
+                        #print(episode_array)
                         return episode_array
                     if episode_winnings + bankroll < bet_amount:
                         bet_amount = episode_winnings + bankroll
-
+    #print(episode_array)
     return episode_array
 
 def figure1(win_prob, real_sim, bankroll):
     for i in range(10):
         cur_episode = betting_strategy(win_prob,real_sim, bankroll)
         plt.plot(cur_episode, label='Episode %s' % i)
+        #print(cur_episode)
+        #temp = np.mean(cur_episode, axis=0)
+        #print(temp)
 
     plotting_utility_function("Figure 1 - 10 episodes of the betting strategy",
                               [0, 300, -256, 100], "Number of Spins", "Cumulative Winnings", "figure1.png")
@@ -126,15 +124,27 @@ def figure1(win_prob, real_sim, bankroll):
 def figure2(win_prob, real_sim, bankroll):
     # Rows is number of episodes; columns is number of spins per episode (1000) + initial value in 1st column
     cumulative_array = np.zeros((1000,1001))
-
+    loss = 0
+    win = 0
     for i in range(1000):
         cur_episode = betting_strategy(win_prob,real_sim, bankroll)
         cumulative_array[i] = cur_episode
+        if cur_episode[1000] == -256:
+            loss = loss+1
+        else:
+            win = win + 1
 
+    #print(cumulative_array)
+    #print(loss,win)
     mean_array = np.mean(cumulative_array, axis = 0)
+    #print(mean_array[1000])
+
     std_dev_array = np.std(cumulative_array, axis = 0)
+
     mean_plus_std = mean_array + std_dev_array
+    #print(mean_plus_std[1000],mean_plus_std.max(),mean_plus_std.argmax())
     mean_minus_std = mean_array - std_dev_array
+    #print(mean_minus_std[1000])
 
     plt.plot(mean_array, label="Mean")
     plt.plot(mean_plus_std, label="Mean + Standard Deviation")
@@ -163,7 +173,7 @@ def figure3(win_prob, real_sim, bankroll):
                                   [0, 300, -256, 100], "Number of Spins", "Cumulative Winnings", "figure3.png")
     else:
         plotting_utility_function("Figure 5 - Median & Standard Deviations for 1000 episodes of Real Simulator",
-                                  [0, 300, -256, 100], "Number of Spins", "Cumulative Winnings", "figure5.png")
+                                  [0, 300, -256, 400], "Number of Spins", "Cumulative Winnings", "figure5.png")
 def figure4_and_5(win_prob, real_sim, bankroll):
     figure3(win_prob, real_sim, bankroll)
 
