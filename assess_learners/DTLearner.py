@@ -8,14 +8,22 @@ class DTLearner(object):
     def author(self):
         return 'vsanjeev6'
 
-    def addEvidence(self, dataX, dataY):
+    def addEvidence(self, data_x, data_y):
         """
-        @summary: Add training data to learner
-        @param dataX: X values of data to add
-        @param dataY: the Y training values
-        """
+        Add training data to learner
 
-        self.tree = self.build_tree(dataX, dataY)
+        :param data_x: A set of feature values used to train the learner
+        :type data_x: numpy.ndarray
+        :param data_y: The value we are attempting to predict given the X data
+        :type data_y: numpy.ndarray
+        """
+        data_y_transpose = np.transpose(np.array([data_y]))
+        data = np.append(data_x, data_y_transpose, axis=1)
+
+        print("Shape of arrays", data_x.shape, data_y_transpose.shape, data.shape)
+
+        self.tree = self.build_tree(data_x, data_y, data)
+
         if self.verbose:
             print("DTLearner")
             print("tree shape: " + str(self.tree.shape))
@@ -55,7 +63,7 @@ class DTLearner(object):
             print(self.tree[node][1])
         return self.tree[node][1]
 
-    def get_best_feature(self, data_x, data_y):
+    def best_feature_selection(self, data_x, data_y):
         best_feature_index = 0
         best_corr_val = 0
 
@@ -69,51 +77,33 @@ class DTLearner(object):
                 best_feature_index = i
         return best_feature_index
 
-    def build_tree(self, dataX, dataY):
-        """
-        @summary: build the decision tree
-        @param dataX: numpy ndarray, features of trainning data
-        @param dataY: numpy ndarray, labels of tranning data
-        @return: numpy ndarray, decision tree in tabular format
-        """
+    def build_tree(self, data_x, data_y, data):
 
-        # aggregated all the data left into a leaf if leaf_size or fewer entries left
-        if dataX.shape[0] <= self.leaf_size:
-            return np.asarray([np.nan, np.mean(dataY), np.nan, np.nan])
+        # Stopping criteria
+        # 1. Number of rows <= Leaf size
+        if data.shape[0] <= self.leaf_size:
+            return np.asarray([np.nan, np.mean(data_y), np.nan, np.nan])
+        # 2. If all Y are the same.
+        if np.all(data_y == data_y[0]):
+            return np.asarray([np.nan, data_y[0], np.nan, np.nan])
 
-        if np.all(np.isclose(dataY, dataY[0])):
-            return np.asarray([np.nan, dataY[0], np.nan, np.nan])
+        # Determine the best feature
+        best_feature_index = self.best_feature_selection(data_x, data_y)
+        #Median of all the rows in the best feature column
+        split_val = np.median(data_x[:, best_feature_index])
 
-        feature_index = self.get_best_feature(dataX, dataY)
-        split_val = np.median(dataX[:, feature_index])
-        print("Best Feature index", feature_index)
-        print("Split Val", split_val)
+        # To prevent infinite recursion due to edge case when only left sub-tree is formed
+        # If the maximum value in the feature column (Xi) == split value, then all the sub nodes will be on the left
+        if ((max(data[:, best_feature_index])) == split_val):
+            return np.asarray([np.nan, np.mean(data_y), np.nan, np.nan])
 
-        left_mask = dataX[:, feature_index] <= split_val
-        # make a leaf to prevent infinite recursion
-        if np.all(np.isclose(left_mask, left_mask[0])):
-            return np.asarray([np.nan, np.mean(dataY), np.nan, np.nan])
+        # Build left and right trees
+        left_tree = self.build_tree(data_x[data[:, best_feature_index] <= split_val], data_y[data[:, best_feature_index] <= split_val], data[data[:, best_feature_index] <= split_val])
+        right_tree = self.build_tree(data_x[data[:, best_feature_index] > split_val], data_y[data[:, best_feature_index] > split_val], data[data[:, best_feature_index] > split_val])
+        # Set root node (each sub-tree is a Decision tree itself)
+        root = np.asarray([best_feature_index, split_val, 1, left_tree.shape[0] + 1])
 
-        right_mask = np.logical_not(left_mask)
-
-        """
-        # not correct! we should not delete a column becasue we can ask it again
-        dataX = np.delete(dataX, feature_index, 1)
-        """
-
-        left_tree = self.build_tree(dataX[left_mask], dataY[left_mask])
-
-        #print("++++++++")
-        #print(left_tree)
-        #print(left_tree.shape)
-
-        right_tree = self.build_tree(dataX[right_mask], dataY[right_mask])
-
-        if left_tree.ndim == 1:
-            root = np.asarray([feature_index, split_val, 1, 2])
-        else:
-            root = np.asarray([feature_index, split_val, 1, left_tree.shape[0] + 1])
-
+        # Append takes only 2 array args at a time
         return np.row_stack((root, left_tree, right_tree))
 
     if __name__ == "__main__":
