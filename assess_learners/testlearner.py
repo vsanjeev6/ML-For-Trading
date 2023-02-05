@@ -31,6 +31,9 @@ import numpy as np
 import LinRegLearner as lrl
 import DTLearner as dtl
 import matplotlib.pyplot as plt
+
+
+
   		  	   		  		 			  		 			     			  	 
 if __name__ == "__main__":  		  	   		  		 			  		 			     			  	 
     if len(sys.argv) != 2:  		  	   		  		 			  		 			     			  	 
@@ -49,7 +52,9 @@ if __name__ == "__main__":
     #To ensure random 60% training set and 40% test set
     np.random.shuffle(data)
 
-    # compute how much of the data is training and testing  		  	   		  		 			  		 			     			  	 
+    np.random.seed(903797718)
+
+    # compute how much of the data is training and testing
     train_rows = int(0.6 * data.shape[0])  		  	   		  		 			  		 			     			  	 
     test_rows = data.shape[0] - train_rows  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
@@ -63,11 +68,12 @@ if __name__ == "__main__":
     print(f"{test_y.shape}")  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
     # create a learner and train it  		  	   		  		 			  		 			     			  	 
-    learner = lrl.LinRegLearner(verbose=True)  # create a LinRegLearner  		  	   		  		 			  		 			     			  	 
-    learner.add_evidence(train_x, train_y)  # train it  		  	   		  		 			  		 			     			  	 
+    #learner = lrl.LinRegLearner(verbose=True)  # create a LinRegLearner
+    learner = dtl.DTLearner(leaf_size=1, verbose=True)
+    learner.addEvidence(train_x, train_y)  # train it
     print(learner.author())  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
-    # evaluate in sample  		  	   		  		 			  		 			     			  	 
+    # evaluate in sample
     pred_y = learner.query(train_x)  # get the predictions  		  	   		  		 			  		 			     			  	 
     rmse = math.sqrt(((train_y - pred_y) ** 2).sum() / train_y.shape[0])  		  	   		  		 			  		 			     			  	 
     print()  		  	   		  		 			  		 			     			  	 
@@ -83,4 +89,6 @@ if __name__ == "__main__":
     print("Out of sample results")  		  	   		  		 			  		 			     			  	 
     print(f"RMSE: {rmse}")  		  	   		  		 			  		 			     			  	 
     c = np.corrcoef(pred_y, y=test_y)  		  	   		  		 			  		 			     			  	 
-    print(f"corr: {c[0,1]}")  		  	   		  		 			  		 			     			  	 
+    print(f"corr: {c[0,1]}")
+
+
