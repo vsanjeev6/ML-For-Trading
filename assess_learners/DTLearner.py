@@ -63,7 +63,7 @@ class DTLearner(object):
             # Returns a 2x2 array where the diagonal elements are equal [[1,x],[x,1]]
             correlation = abs(np.corrcoef(data_x[:, i], data_y)[0, 1])
             # -1 and 1 are highly correlated, just in the opposite sense.
-            # Pick the first one that satifies this condition
+            # Pick the first one that satisfies this condition
             if correlation > best_corr_val:
                 best_corr_val = correlation
                 best_feature_index = i
