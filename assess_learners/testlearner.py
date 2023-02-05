@@ -28,17 +28,27 @@ import sys
   		  	   		  		 			  		 			     			  	 
 import numpy as np  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
-import LinRegLearner as lrl  		  	   		  		 			  		 			     			  	 
+import LinRegLearner as lrl
+import DTLearner as dtl
+import matplotlib.pyplot as plt
   		  	   		  		 			  		 			     			  	 
 if __name__ == "__main__":  		  	   		  		 			  		 			     			  	 
     if len(sys.argv) != 2:  		  	   		  		 			  		 			     			  	 
         print("Usage: python testlearner.py <filename>")  		  	   		  		 			  		 			     			  	 
-        sys.exit(1)  		  	   		  		 			  		 			     			  	 
+        sys.exit(1)
     inf = open(sys.argv[1])  		  	   		  		 			  		 			     			  	 
-    data = np.array(  		  	   		  		 			  		 			     			  	 
-        [list(map(float, s.strip().split(","))) for s in inf.readlines()]  		  	   		  		 			  		 			     			  	 
-    )  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
+    data = np.array(
+        [list(map(str, s.strip().split(","))) for s in inf.readlines()]
+    )
+
+    # Strip first row (heading) and first column (date)
+    if sys.argv[1] == "Data/Istanbul.csv":
+        data = data[1:, 1:]
+
+    data = data.astype('float')
+    #To ensure random 60% training set and 40% test set
+    np.random.shuffle(data)
+
     # compute how much of the data is training and testing  		  	   		  		 			  		 			     			  	 
     train_rows = int(0.6 * data.shape[0])  		  	   		  		 			  		 			     			  	 
     test_rows = data.shape[0] - train_rows  		  	   		  		 			  		 			     			  	 
