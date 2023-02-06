@@ -30,6 +30,7 @@ import numpy as np
   		  	   		  		 			  		 			     			  	 
 import LinRegLearner as lrl
 import DTLearner as dtl
+import RTLearner as rtl
 import matplotlib.pyplot as plt
 
 
@@ -69,7 +70,7 @@ if __name__ == "__main__":
   		  	   		  		 			  		 			     			  	 
     # create a learner and train it  		  	   		  		 			  		 			     			  	 
     #learner = lrl.LinRegLearner(verbose=True)  # create a LinRegLearner
-    learner = dtl.DTLearner(leaf_size=1, verbose=True)
+    learner = rtl.RTLearner(leaf_size=1, verbose=True)
     learner.addEvidence(train_x, train_y)  # train it
     print(learner.author())  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
