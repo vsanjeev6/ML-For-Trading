@@ -35,11 +35,11 @@ class RTLearner(object):
         :return: The predicted result of the input data according to the trained model
         :rtype: numpy.ndarray
         """
-        out = np.array([])
+        predictions = np.array([])
         for testx in points:
-            out = np.append(out,self.predicted_result(testx))
-        #print("output", out)
-        return out
+            predictions = np.append(predictions,self.predicted_result(testx))
+        #print("output", predictions)
+        return predictions
 
 
     def build_tree(self, data_x, data_y):
