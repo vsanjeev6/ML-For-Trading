@@ -22,7 +22,7 @@ class DTLearner(object):
 
         print("Shape of arrays", data_x.shape, data_y_transpose.shape, data.shape)
 
-        self.tree = self.build_tree(data_x, data_y, data)
+        self.tree = self.build_tree(data_x, data_y)
 
         if self.verbose:
             print("DTLearner")
@@ -32,9 +32,12 @@ class DTLearner(object):
 
     def query(self, points):
         """
-        @summary: Estimate a set of test points given the model we built.
-        @param points: should be a numpy array with each row corresponding to a specific query.
-        @return: the estimated values according to the saved model.
+        Estimate a set of test points given the model we built.
+
+        :param points: A numpy array with each row corresponding to a specific query.
+        :type points: numpy.ndarray
+        :return: The predicted result of the input data according to the trained model
+        :rtype: numpy.ndarray
         """
         out = []
         for point in points:
@@ -77,11 +80,11 @@ class DTLearner(object):
                 best_feature_index = i
         return best_feature_index
 
-    def build_tree(self, data_x, data_y, data):
+    def build_tree(self, data_x, data_y):
 
         # Stopping criteria
         # 1. Number of rows <= Leaf size
-        if data.shape[0] <= self.leaf_size:
+        if data_x.shape[0] <= self.leaf_size:
             return np.asarray([np.nan, np.mean(data_y), np.nan, np.nan])
         # 2. If all Y are the same.
         if np.all(data_y == data_y[0]):
@@ -94,17 +97,25 @@ class DTLearner(object):
 
         # To prevent infinite recursion due to edge case when only left sub-tree is formed
         # If the maximum value in the feature column (Xi) == split value, then all the sub nodes will be on the left
-        if ((max(data[:, best_feature_index])) == split_val):
+        if ((max(data_x[:, best_feature_index])) == split_val):
             return np.asarray([np.nan, np.mean(data_y), np.nan, np.nan])
 
         # Build left and right trees
-        left_tree = self.build_tree(data_x[data[:, best_feature_index] <= split_val], data_y[data[:, best_feature_index] <= split_val], data[data[:, best_feature_index] <= split_val])
-        right_tree = self.build_tree(data_x[data[:, best_feature_index] > split_val], data_y[data[:, best_feature_index] > split_val], data[data[:, best_feature_index] > split_val])
+        left_tree = self.build_tree(data_x[data_x[:, best_feature_index] <= split_val], data_y[data_x[:, best_feature_index] <= split_val])
+        right_tree = self.build_tree(data_x[data_x[:, best_feature_index] > split_val], data_y[data_x[:, best_feature_index] > split_val])
+
+        print("Left tree shape, Ndim", left_tree.shape[0], left_tree.ndim)
         # Set root node (each sub-tree is a Decision tree itself)
-        root = np.asarray([best_feature_index, split_val, 1, left_tree.shape[0] + 1])
+        if left_tree.ndim == 1:
+            root = np.asarray([best_feature_index, split_val, 1, 2])
+        else:
+            root = np.asarray([best_feature_index, split_val, 1, left_tree.shape[0] + 1])
+
+        #Causing bound access error
+        #root = np.asarray([best_feature_index, split_val, 1, left_tree.shape[0] + 1])
 
         # Append takes only 2 array args at a time
-        return np.row_stack((root, left_tree, right_tree))
+        return np.vstack((root, left_tree, right_tree))
 
     if __name__ == "__main__":
         print('not implemented')
