@@ -31,6 +31,7 @@ import numpy as np
 import LinRegLearner as lrl
 import DTLearner as dtl
 import RTLearner as rtl
+import BagLearner as bl
 import matplotlib.pyplot as plt
 
 
@@ -70,7 +71,7 @@ if __name__ == "__main__":
   		  	   		  		 			  		 			     			  	 
     # create a learner and train it  		  	   		  		 			  		 			     			  	 
     #learner = lrl.LinRegLearner(verbose=True)  # create a LinRegLearner
-    learner = rtl.RTLearner(leaf_size=1, verbose=True)
+    learner = bl.BagLearner(learner = dtl.DTLearner, kwargs = {"leaf_size":1}, bags = 20, boost = False, verbose = False)
     learner.addEvidence(train_x, train_y)  # train it
     print(learner.author())  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
