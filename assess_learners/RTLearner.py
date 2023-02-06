@@ -11,7 +11,7 @@ class RTLearner(object):
     def author(self):
         return 'vsanjeev6'
 
-    def addEvidence(self, data_x, data_y):
+    def add_evidence(self, data_x, data_y):
         """
         Add training data to learner
 

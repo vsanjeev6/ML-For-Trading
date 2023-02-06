@@ -14,7 +14,7 @@ class BagLearner(object):
     def author(self):
         return 'vsanjeev6'
 
-    def addEvidence(self, data_x, data_y):
+    def add_evidence(self, data_x, data_y):
         for learner in self.learners:
             # Bagging with replacement; n' = n = 321 (for Istanbul.csv)
             #random_indices is a 1-D array (321x1)
@@ -23,7 +23,7 @@ class BagLearner(object):
             random_x = data_x[random_indices]
             random_y = data_y[random_indices]
             # Train each individual learner with the new Training data
-            learner.addEvidence(random_x, random_y)
+            learner.add_evidence(random_x, random_y)
         #print("Shape of bag_index", random_indices.shape)
         #print("Shape of data_x", data_x.shape)
 
