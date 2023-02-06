@@ -19,16 +19,8 @@ class DTLearner(object):
         """
         data_y_transpose = np.transpose(np.array([data_y]))
         data = np.append(data_x, data_y_transpose, axis=1)
-
-        print("Shape of arrays", data_x.shape, data_y_transpose.shape, data.shape)
-
+        #print("Shape of arrays", data_x.shape, data_y_transpose.shape, data.shape)
         self.tree = self.build_tree(data_x, data_y)
-
-        if self.verbose:
-            print("DTLearner")
-            print("tree shape: " + str(self.tree.shape))
-            print("tree details below")
-            print(self.tree)
 
     def query(self, points):
         """
@@ -94,6 +86,7 @@ class DTLearner(object):
         best_feature_index = self.best_feature_selection(data_x, data_y)
         #Median of all the rows in the best feature column
         split_val = np.median(data_x[:, best_feature_index])
+        #print("Best feature Index, Split Value", best_feature_index, split_val)
 
         # To prevent infinite recursion due to edge case when only left sub-tree is formed
         # If the maximum value in the feature column (Xi) == split value, then all the sub nodes will be on the left
@@ -102,12 +95,15 @@ class DTLearner(object):
 
         # Build left and right trees
         left_tree = self.build_tree(data_x[data_x[:, best_feature_index] <= split_val], data_y[data_x[:, best_feature_index] <= split_val])
+        #print(left_tree)
+        #print(left_tree.shape)
         right_tree = self.build_tree(data_x[data_x[:, best_feature_index] > split_val], data_y[data_x[:, best_feature_index] > split_val])
 
-        print("Left tree shape, Ndim", left_tree.shape[0], left_tree.ndim)
+        #print("Left tree shape, Ndim", left_tree.shape[0], left_tree.ndim)
         # Set root node (each sub-tree is a Decision tree itself)
+        # Relative node positions
         if left_tree.ndim == 1:
-            root = np.asarray([best_feature_index, split_val, 1, 2])
+            root = np.asarray([best_feature_index, split_val, 1, 2]) #Need to add 1+1
         else:
             root = np.asarray([best_feature_index, split_val, 1, left_tree.shape[0] + 1])
 
