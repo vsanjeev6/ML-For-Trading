@@ -17,13 +17,14 @@ class DTLearner(object):
         :param data_y: The value we are attempting to predict given the X data
         :type data_y: numpy.ndarray
         """
-        data_y_transpose = np.transpose(np.array([data_y]))
-        data = np.append(data_x, data_y_transpose, axis=1)
+        #data_y_transpose = np.transpose(np.array([data_y]))
+        #data = np.append(data_x, data_y_transpose, axis=1)
         #print("Shape of arrays", data_x.shape, data_y_transpose.shape, data.shape)
+
         self.tree = self.build_tree(data_x, data_y)
 
-    def query(self, points):
-        """
+    def query(self,points):
+        """  		   	  			  	 		  		  		    	 		 		   		 		  
         Estimate a set of test points given the model we built.
 
         :param points: A numpy array with each row corresponding to a specific query.
@@ -31,46 +32,12 @@ class DTLearner(object):
         :return: The predicted result of the input data according to the trained model
         :rtype: numpy.ndarray
         """
-        out = []
-        for point in points:
-            out.append(self.get_prediction(point))
-        print("Predictions")
-        print(out)
-        return np.asarray(out)
+        out = np.array([])
+        for testx in points:
+            out = np.append(out,self.predicted_result(testx))
+        #print("output", out)
+        return out
 
-    def get_prediction(self, point):
-        """
-        @summary: Predict one query using self.tree
-        @param point: numpy ndarray, one specific query.
-        @return: the prediction for the one query
-        """
-
-        node = 0
-        while ~np.isnan(self.tree[node][0]):
-            split_value = point[int(self.tree[node][0])]
-
-            # relative position so new_node = curr_node + offset
-            if split_value <= self.tree[node][1]:
-                node += int(self.tree[node][2])
-            else:
-                node += int(self.tree[node][3])
-            print("Query Tree")
-            print(self.tree[node][1])
-        return self.tree[node][1]
-
-    def best_feature_selection(self, data_x, data_y):
-        best_feature_index = 0
-        best_corr_val = 0
-
-        for i in range(data_x.shape[1]):
-            # Returns a 2x2 array where the diagonal elements are equal [[1,x],[x,1]]
-            correlation = abs(np.corrcoef(data_x[:, i], data_y)[0, 1])
-            # -1 and 1 are highly correlated, just in the opposite sense.
-            # Pick the first one that satisfies this condition
-            if correlation > best_corr_val:
-                best_corr_val = correlation
-                best_feature_index = i
-        return best_feature_index
 
     def build_tree(self, data_x, data_y):
 
@@ -95,11 +62,12 @@ class DTLearner(object):
 
         # Build left and right trees
         left_tree = self.build_tree(data_x[data_x[:, best_feature_index] <= split_val], data_y[data_x[:, best_feature_index] <= split_val])
-        #print(left_tree)
-        #print(left_tree.shape)
         right_tree = self.build_tree(data_x[data_x[:, best_feature_index] > split_val], data_y[data_x[:, best_feature_index] > split_val])
 
         #print("Left tree shape, Ndim", left_tree.shape[0], left_tree.ndim)
+        #print(left_tree)
+        #print(left_tree.shape)
+
         # Set root node (each sub-tree is a Decision tree itself)
         # Relative node positions
         if left_tree.ndim == 1:
@@ -112,6 +80,36 @@ class DTLearner(object):
 
         # Append takes only 2 array args at a time
         return np.vstack((root, left_tree, right_tree))
+
+
+    def best_feature_selection(self, data_x, data_y):
+        best_feature_index = 0
+        best_corr_val = 0
+
+        for i in range(data_x.shape[1]):
+            # Returns a 2x2 array where the diagonal elements are equal [[1,x],[x,1]]
+            correlation = abs(np.corrcoef(data_x[:, i], data_y)[0, 1])
+            # -1 and 1 are highly correlated, just in the opposite sense.
+            # Pick the first one that satisfies this condition
+            if correlation > best_corr_val:
+                best_corr_val = correlation
+                best_feature_index = i
+        return best_feature_index
+
+
+    def predicted_result(self, testx):
+        curr_feature_node = 0
+        # Leaf nodes are populated with NAN
+        while ~np.isnan(self.tree[curr_feature_node][0]):
+            # Query value
+            testx_value = testx[int(self.tree[curr_feature_node][0])]
+            # Check against split value
+            # Structure of node [feature_node,split_val, left(=1), right(=offset by left tree size)]
+            if testx_value <= self.tree[curr_feature_node][1]:
+                curr_feature_node += int(self.tree[curr_feature_node][2])
+            else:
+                curr_feature_node += int(self.tree[curr_feature_node][3])
+        return self.tree[curr_feature_node][1]
 
     if __name__ == "__main__":
         print('not implemented')
