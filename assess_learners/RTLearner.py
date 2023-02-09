@@ -6,7 +6,6 @@ class RTLearner(object):
     def __init__(self, leaf_size=1, verbose=False):
         self.leaf_size = leaf_size
         self.verbose = verbose
-        np.random.seed(903797718)
 
     def author(self):
         return 'vsanjeev6'

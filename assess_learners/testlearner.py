@@ -105,13 +105,13 @@ def experiment_3_1(train_x, train_y, test_x, test_y):
             learner = dtl.DTLearner(leaf_size=leafsize, verbose=False)
             learner.add_evidence(train_x, train_y)
             dt_predY = learner.query(test_x)
-            dt_mae = np.mean(np.abs((np.asarray(test_y) - np.asarray(dt_predY))))
+            dt_mae = np.mean(np.abs((test_y - dt_predY)))
             dt_mae_arr[leafsize-1][i] = dt_mae
 
             learner = rtl.RTLearner(leaf_size=leafsize, verbose=False)
             learner.add_evidence(train_x, train_y)
             rt_predY = learner.query(test_x)
-            rt_mae = np.mean(np.abs((np.asarray(test_y) - np.asarray(rt_predY))))
+            rt_mae = np.mean(np.abs((test_y - rt_predY)))
             rt_mae_arr[leafsize-1][i] = rt_mae
 
     dt_mae_mean = np.mean(dt_mae_arr, axis=1)
