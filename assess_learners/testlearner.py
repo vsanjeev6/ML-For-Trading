@@ -70,7 +70,7 @@ def experiment_1(train_x, train_y, test_x, test_y):
                               out_sample_rsme, "Leaf Size", "RMSE", "Figure1.png", "In Sample", "Out Sample")
 
 def experiment_2(train_x, train_y, test_x, test_y):
-    bag_size = 20
+    bag_size = 50
     experimental_leaf_size = 101
     in_sample_rsme = []
     out_sample_rsme = []
@@ -96,25 +96,29 @@ def experiment_2(train_x, train_y, test_x, test_y):
 
 def experiment_3_1(train_x, train_y, test_x, test_y):
     experimental_leaf_size = 101
-    dt_mae_arr = []
-    rt_mae_arr = []
+    dt_mae_arr = np.zeros((100,25))
+    rt_mae_arr = np.zeros((100,25))
 
     """Computing Mean Absolute Error of DT and RT """
-    for leafsize in range(1, experimental_leaf_size):
-        learner = dtl.DTLearner(leaf_size=leafsize, verbose=False)
-        learner.add_evidence(train_x, train_y)
-        dt_predY = learner.query(test_x)
-        dt_mae = np.mean(np.abs((np.asarray(test_y) - np.asarray(dt_predY))))
-        dt_mae_arr.append(dt_mae)
+    for i in range(25):
+        for leafsize in range(1, experimental_leaf_size):
+            learner = dtl.DTLearner(leaf_size=leafsize, verbose=False)
+            learner.add_evidence(train_x, train_y)
+            dt_predY = learner.query(test_x)
+            dt_mae = np.mean(np.abs((np.asarray(test_y) - np.asarray(dt_predY))))
+            dt_mae_arr[leafsize-1][i] = dt_mae
 
-        learner = rtl.RTLearner(leaf_size=leafsize, verbose=False)
-        learner.add_evidence(train_x, train_y)
-        rt_predY = learner.query(test_x)
-        rt_mae = np.mean(np.abs((np.asarray(test_y) - np.asarray(rt_predY))))
-        rt_mae_arr.append(rt_mae)
+            learner = rtl.RTLearner(leaf_size=leafsize, verbose=False)
+            learner.add_evidence(train_x, train_y)
+            rt_predY = learner.query(test_x)
+            rt_mae = np.mean(np.abs((np.asarray(test_y) - np.asarray(rt_predY))))
+            rt_mae_arr[leafsize-1][i] = rt_mae
 
-    plotting_utility_function("Figure 3.1 - Comparing Decision Tree & Random Tree using MAE", experimental_leaf_size,dt_mae_arr,
-                              rt_mae_arr, "Leaf Size", "Mean Absolute Error", "Figure3_1.png", "Decision Tree", "Random Tree")
+    dt_mae_mean = np.mean(dt_mae_arr, axis=1)
+    rt_mae_mean = np.mean(rt_mae_arr, axis=1)
+
+    plotting_utility_function("Figure 3.1 - Comparing Decision Tree & Random Tree using MAE", experimental_leaf_size,dt_mae_mean,
+                              rt_mae_mean, "Leaf Size", "Mean Absolute Error", "Figure3_1.png", "Decision Tree", "Random Tree")
 
 def compute_r_squared(train_x, train_y, test_x, test_y, learner):
     ss_res = 0
@@ -131,16 +135,20 @@ def compute_r_squared(train_x, train_y, test_x, test_y, learner):
 
 def experiment_3_2(train_x, train_y, test_x, test_y):
     experimental_leaf_size = 101
-    r2_dt = []
-    r2_rt = []
+    r2_dt = np.zeros((100,25))
+    r2_rt = np.zeros((100,25))
 
     """Computing Coefficient of Determination for DT and RT """
-    for leafsize in range(1, experimental_leaf_size):
-        r2_dt.append(compute_r_squared(train_x, train_y, test_x, test_y, dtl.DTLearner(leaf_size=leafsize, verbose=False)))
-        r2_rt.append(compute_r_squared(train_x, train_y, test_x, test_y, rtl.RTLearner(leaf_size=leafsize, verbose=False)))
+    for i in range(25):
+        for leafsize in range(1, experimental_leaf_size):
+            r2_dt[leafsize-1][i] = (compute_r_squared(train_x, train_y, test_x, test_y, dtl.DTLearner(leaf_size=leafsize, verbose=False)))
+            r2_rt[leafsize-1][i] = (compute_r_squared(train_x, train_y, test_x, test_y, rtl.RTLearner(leaf_size=leafsize, verbose=False)))
 
-    plotting_utility_function("Figure 3.2 - Comparing Decision Tree & Random Tree using R-Squared", experimental_leaf_size,r2_dt,
-                              r2_rt, "Leaf Size", "Coefficient of Determination", "Figure3_2.png","Decision Tree", "Random Tree")
+    r2_dt_mean = np.mean(r2_dt, axis=1)
+    r2_rt_mean = np.mean(r2_rt, axis=1)
+
+    plotting_utility_function("Figure 3.2 - Comparing Decision Tree & Random Tree using R-Squared", experimental_leaf_size,r2_dt_mean,
+                              r2_rt_mean, "Leaf Size", "Coefficient of Determination", "Figure3_2.png","Decision Tree", "Random Tree")
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
