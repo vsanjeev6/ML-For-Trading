@@ -21,9 +21,9 @@ GT honor code violation.
   		  	   		  		 			  		 			     			  	 
 -----do not edit anything above this line---  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
-Student Name: Tucker Balch (replace with your name)  		  	   		  		 			  		 			     			  	 
-GT User ID: tb34 (replace with your User ID)  		  	   		  		 			  		 			     			  	 
-GT ID: 900897987 (replace with your GT ID)  		  	   		  		 			  		 			     			  	 
+Student Name: Vaishnavi Sanjeev  		  	   		  		 			  		 			     			  	 
+GT User ID: vsanjeev6  		  	   		  		 			  		 			     			  	 
+GT ID: 903797718  		  	   		  		 			  		 			     			  	 
 """  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
 import math  		  	   		  		 			  		 			     			  	 
@@ -47,7 +47,7 @@ def best_4_lin_reg(seed=1489683273):
     np.random.seed(seed)  		  	   		  		 			  		 			     			  	 
     x = np.zeros((100, 2))  		  	   		  		 			  		 			     			  	 
     y = np.random.random(size=(100,)) * 200 - 100  		  	   		  		 			  		 			     			  	 
-    # Here's is an example of creating a Y from randomly generated  		  	   		  		 			  		 			     			  	 
+    # Here is an example of creating a Y from randomly generated
     # X with multiple columns  		  	   		  		 			  		 			     			  	 
     # y = x[:,0] + np.sin(x[:,1]) + x[:,2]**2 + x[:,3]**3  		  	   		  		 			  		 			     			  	 
     return x, y  		  	   		  		 			  		 			     			  	 
@@ -75,8 +75,8 @@ def author():
     :return: The GT username of the student  		  	   		  		 			  		 			     			  	 
     :rtype: str  		  	   		  		 			  		 			     			  	 
     """  		  	   		  		 			  		 			     			  	 
-    return "tb34"  # Change this to your user ID  		  	   		  		 			  		 			     			  	 
+    return "vsanjeev6"  # Change this to your user ID
   		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
 if __name__ == "__main__":  		  	   		  		 			  		 			     			  	 
-    print("they call me Tim.")  		  	   		  		 			  		 			     			  	 
+    print("they call me Tim.")
