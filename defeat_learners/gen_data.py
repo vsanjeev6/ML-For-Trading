@@ -44,12 +44,16 @@ def best_4_lin_reg(seed=1489683273):
     :return: Returns data that performs significantly better with LinRegLearner than DTLearner.  		  	   		  		 			  		 			     			  	 
     :rtype: numpy.ndarray  		  	   		  		 			  		 			     			  	 
     """  		  	   		  		 			  		 			     			  	 
-    np.random.seed(seed)  		  	   		  		 			  		 			     			  	 
-    x = np.zeros((100, 2))  		  	   		  		 			  		 			     			  	 
-    y = np.random.random(size=(100,)) * 200 - 100  		  	   		  		 			  		 			     			  	 
-    # Here is an example of creating a Y from randomly generated
-    # X with multiple columns  		  	   		  		 			  		 			     			  	 
-    # y = x[:,0] + np.sin(x[:,1]) + x[:,2]**2 + x[:,3]**3  		  	   		  		 			  		 			     			  	 
+    np.random.seed(seed)
+    # Generate features randomly
+    X_rows = np.random.randint(10, 1001)
+    X_columns = np.random.randint(2, 11)
+    x = np.random.random((X_rows, X_columns))
+
+    # Y is linearly related to X
+    y = np.sum(x,axis = 1)
+    #print("Linear Regression Dataset")
+    #print(x,y, np.shape(x), np.shape(y))
     return x, y  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
@@ -65,10 +69,17 @@ def best_4_dt(seed=1489683273):
     :rtype: numpy.ndarray  		  	   		  		 			  		 			     			  	 
     """  		  	   		  		 			  		 			     			  	 
     np.random.seed(seed)  		  	   		  		 			  		 			     			  	 
-    x = np.zeros((100, 2))  		  	   		  		 			  		 			     			  	 
-    y = np.random.random(size=(100,)) * 200 - 100  		  	   		  		 			  		 			     			  	 
-    return x, y  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
+    # Generate features randomly
+    X_rows = np.random.randint(10, 1001)
+    X_columns = np.random.randint(2, 11)
+    x = np.random.random((X_rows, X_columns))
+
+    # Decision Trees deal with categorical data batter
+    y = np.where(x[:,0] < 0.5, 0, 1)
+    #print("Decision Tree Dataset")
+    #print(x, y, np.shape(x), np.shape(y))
+    return x, y
+
   		  	   		  		 			  		 			     			  	 
 def author():  		  	   		  		 			  		 			     			  	 
     """  		  	   		  		 			  		 			     			  	 
@@ -78,5 +89,12 @@ def author():
     return "vsanjeev6"  # Change this to your user ID
   		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
-if __name__ == "__main__":  		  	   		  		 			  		 			     			  	 
-    print("they call me Tim.")
+if __name__ == "__main__":
+    x_lin, y_lin = best_4_lin_reg(seed=1489683273)
+    x_dt, y_dt = best_4_dt(seed=1489683273)
+    if np.array_equal(x_lin, x_dt):
+        pass
+        #print("Same-sies")
+    else:
+        pass
+        #print("ERROR")
