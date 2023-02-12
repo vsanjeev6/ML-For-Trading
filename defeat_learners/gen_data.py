@@ -33,7 +33,7 @@ import numpy as np
   		  	   		  		 			  		 			     			  	 
 # this function should return a dataset (X and Y) that will work  		  	   		  		 			  		 			     			  	 
 # better for linear regression than decision trees  		  	   		  		 			  		 			     			  	 
-def best_4_lin_reg(seed=1489683273):  		  	   		  		 			  		 			     			  	 
+def best_4_lin_reg(seed=1489683273):
     """  		  	   		  		 			  		 			     			  	 
     Returns data that performs significantly better with LinRegLearner than DTLearner.  		  	   		  		 			  		 			     			  	 
     The data set should include from 2 to 10 columns in X, and one column in Y.  		  	   		  		 			  		 			     			  	 
@@ -51,13 +51,13 @@ def best_4_lin_reg(seed=1489683273):
     x = np.random.random((X_rows, X_columns))
 
     # Y is linearly related to X
-    y = np.sum(x,axis = 1)
+    y = np.mean(x,axis = 1)
     #print("Linear Regression Dataset")
     #print(x,y, np.shape(x), np.shape(y))
     return x, y  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
-def best_4_dt(seed=1489683273):  		  	   		  		 			  		 			     			  	 
+def best_4_dt(seed=1489683273):
     """  		  	   		  		 			  		 			     			  	 
     Returns data that performs significantly better with DTLearner than LinRegLearner.  		  	   		  		 			  		 			     			  	 
     The data set should include from 2 to 10 columns in X, and one column in Y.  		  	   		  		 			  		 			     			  	 
