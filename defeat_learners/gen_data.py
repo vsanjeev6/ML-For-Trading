@@ -52,6 +52,7 @@ def best_4_lin_reg(seed=1489683273):
 
     # Y is linearly related to X
     y = np.mean(x,axis = 1)
+
     #print("Linear Regression Dataset")
     #print(x,y, np.shape(x), np.shape(y))
     return x, y  		  	   		  		 			  		 			     			  	 
@@ -74,10 +75,14 @@ def best_4_dt(seed=1489683273):
     X_columns = np.random.randint(2, 11)
     x = np.random.random((X_rows, X_columns))
 
-    # Decision Trees deal with categorical data batter
-    y = np.where(x[:,0] < 0.5, 0, 1)
+    # Decision Trees deal with non-linear data batter
+    sums = np.sum(x, axis=1)
+    powers = np.arange(0, x.shape[1])
+    y = (np.sin(sums)**3) * np.sum(np.power(x, powers+1), axis=1) - 3
+
+    #print(sums, np.shape(sums))
     #print("Decision Tree Dataset")
-    #print(x, y, np.shape(x), np.shape(y))
+    #print(y, np.shape(x), np.shape(y))
     return x, y
 
   		  	   		  		 			  		 			     			  	 
