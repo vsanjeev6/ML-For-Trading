@@ -78,7 +78,8 @@ def best_4_dt(seed=1489683273):
     # Decision Trees deal with non-linear data batter
     sums = np.sum(x, axis=1)
     powers = np.arange(0, x.shape[1])
-    y = (np.sin(sums)**3) * np.sum(np.power(x, powers+1), axis=1) - 3
+    y_temp = np.power((5*x), powers+1) * np.power((3*x), powers+1)
+    y = np.sum(y_temp, axis=1)
 
     #print(sums, np.shape(sums))
     #print("Decision Tree Dataset")
