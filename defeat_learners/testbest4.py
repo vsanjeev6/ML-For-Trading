@@ -74,14 +74,14 @@ def compare_os_rmse(learner1, learner2, x, y):
     return rmse1, rmse2  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
-def test_code():  		  	   		  		 			  		 			     			  	 
+def test_code(seed):
     """  		  	   		  		 			  		 			     			  	 
     Performs a test of your code and prints the results  		  	   		  		 			  		 			     			  	 
     """  		  	   		  		 			  		 			     			  	 
     # create two learners and get data  		  	   		  		 			  		 			     			  	 
     lrlearner = lrl.LinRegLearner(verbose=False)  		  	   		  		 			  		 			     			  	 
     dtlearner = dt.DTLearner(verbose=False, leaf_size=1)  		  	   		  		 			  		 			     			  	 
-    x, y = best_4_lin_reg()  		  	   		  		 			  		 			     			  	 
+    x, y = best_4_lin_reg(seed)
   		  	   		  		 			  		 			     			  	 
     # compare the two learners  		  	   		  		 			  		 			     			  	 
     rmse_lr, rmse_dt = compare_os_rmse(lrlearner, dtlearner, x, y)  		  	   		  		 			  		 			     			  	 
@@ -94,13 +94,14 @@ def test_code():
     if rmse_lr < 0.9 * rmse_dt:  		  	   		  		 			  		 			     			  	 
         print("LR < 0.9 DT:  pass")  		  	   		  		 			  		 			     			  	 
     else:  		  	   		  		 			  		 			     			  	 
-        print("LR >= 0.9 DT:  fail")  		  	   		  		 			  		 			     			  	 
+        print("LR >= 0.9 DT:  fail")
+        print(seed)
     print  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
     # get data that is best for a random tree  		  	   		  		 			  		 			     			  	 
     lrlearner = lrl.LinRegLearner(verbose=False)  		  	   		  		 			  		 			     			  	 
     dtlearner = dt.DTLearner(verbose=False, leaf_size=1)  		  	   		  		 			  		 			     			  	 
-    x, y = best_4_dt()  		  	   		  		 			  		 			     			  	 
+    x, y = best_4_dt(seed)
   		  	   		  		 			  		 			     			  	 
     # compare the two learners  		  	   		  		 			  		 			     			  	 
     rmse_lr, rmse_dt = compare_os_rmse(lrlearner, dtlearner, x, y)  		  	   		  		 			  		 			     			  	 
@@ -113,9 +114,11 @@ def test_code():
     if rmse_dt < 0.9 * rmse_lr:  		  	   		  		 			  		 			     			  	 
         print("DT < 0.9 LR:  pass")  		  	   		  		 			  		 			     			  	 
     else:  		  	   		  		 			  		 			     			  	 
-        print("DT >= 0.9 LR:  fail")  		  	   		  		 			  		 			     			  	 
-    print  		  	   		  		 			  		 			     			  	 
+        print("DT >= 0.9 LR:  fail")
+        print(seed)
+    print
   		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
-if __name__ == "__main__":  		  	   		  		 			  		 			     			  	 
-    test_code()  		  	   		  		 			  		 			     			  	 
+if __name__ == "__main__":
+    for i in range (5000):
+        test_code(seed = i)
