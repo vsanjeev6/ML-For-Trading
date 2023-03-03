@@ -88,26 +88,28 @@ def compute_portvals(
     trades_df = prices_df.copy()
     trades_df.ix[:, :] = 0
 
-    # Loop over orders index
+    # Loop over the prices dataframe index
+    # Update the trades dataframe only during dates an order was placed
     for date in prices_df.index:
         if date in orders_df.index:
-            sub_order = orders_df.ix[date:date]
-            #print(sub_order)
-            for i in range(0, sub_order.shape[0]):
-                sym = sub_order.ix[i, 'Symbol']
-                order = sub_order.ix[i, 'Order']
-                shares = sub_order.ix[i, 'Shares']
-                # impact = no. of orders in transaction * price of each share * impact. deduct impact for every transaction
+            orders_on_same_day = orders_df.ix[date:date]
+            #print(orders_on_same_day)
+            for i in range(0, orders_on_same_day.shape[0]):
+                sym = orders_on_same_day.ix[i, 'Symbol']
+                order = orders_on_same_day.ix[i, 'Order']
+                shares = orders_on_same_day.ix[i, 'Shares']
+                # impact = f(no. of shares * share price * impact %)
+                # Deduct impact for every transaction from cash
                 impact_deduction = shares * prices_df.ix[date, sym] * impact
 
                 if order == 'SELL':
-                    trades_df.ix[date, sym] += shares * (-1)
-                    trades_df.ix[date, 'Cash'] += prices_df.ix[date, sym] * shares
+                    trades_df.ix[date, sym] = trades_df.ix[date, sym] + (shares * (-1))
+                    trades_df.ix[date, 'Cash'] = trades_df.ix[date, 'Cash'] + (prices_df.ix[date, sym] * shares)
                     # Deduction from cash balance for EACH TRADE
                     trades_df.ix[date, 'Cash'] = trades_df.ix[date, 'Cash'] - commission - impact_deduction
                 if order == 'BUY':
-                    trades_df.ix[date, sym] += shares
-                    trades_df.ix[date, 'Cash'] += prices_df.ix[date, sym] * shares * (-1)
+                    trades_df.ix[date, sym] = trades_df.ix[date, sym] + shares
+                    trades_df.ix[date, 'Cash'] = trades_df.ix[date, 'Cash'] + (prices_df.ix[date, sym] * shares * (-1))
                     # Deduction from cash balance for EACH TRADE
                     trades_df.ix[date, 'Cash'] = trades_df.ix[date, 'Cash'] - commission - impact_deduction
     #print(trades_df)
@@ -116,11 +118,12 @@ def compute_portvals(
     Holdings Dataframe  		  	   		  		 			  		 			     			  	 
     """
     holdings_df = trades_df.copy()
+    # Initialize all entries to 0's
     holdings_df.ix[:, :] = 0
-    #On first day, all you got is cash (no stock holdings)
+    # On first day, all you got is cash (no stock holdings)
     holdings_df.ix[0, 'Cash'] = start_val
 
-    # special handling of 1st row
+    # 1st row
     holdings_df.ix[0, :] += trades_df.ix[0, :]
 
     for i in range(1, holdings_df.shape[0]):
@@ -135,7 +138,7 @@ def compute_portvals(
     #print(values_df)
 
     portvals = values_df.sum(axis=1)
-    print(portvals)
+    #print(portvals)
 
     return portvals  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
@@ -148,7 +151,7 @@ def test_code():
     # note that during autograding his function will not be called.  		  	   		  		 			  		 			     			  	 
     # Define input parameters  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
-    of = "./orders/additional_orders/orders-short.csv"
+    of = "./orders/additional_orders/orders2.csv"
     sv = 1000000  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
     # Process orders  		  	   		  		 			  		 			     			  	 
