@@ -21,26 +21,25 @@ GT honor code violation.
   		  	   		  		 			  		 			     			  	 
 -----do not edit anything above this line---  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
-Student Name: Tucker Balch (replace with your name)  		  	   		  		 			  		 			     			  	 
-GT User ID: tb34 (replace with your User ID)  		  	   		  		 			  		 			     			  	 
-GT ID: 900897987 (replace with your GT ID)  		  	   		  		 			  		 			     			  	 
+Student Name: Vaishnavi Sanjeev  		  	   		  		 			  		 			     			  	 
+GT User ID: vsanjeev6  		  	   		  		 			  		 			     			  	 
+GT ID: 903797718   		  	   		  		 			  		 			     			  	 
 """  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
-import datetime as dt  		  	   		  		 			  		 			     			  	 
-import os  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
-import numpy as np  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
+import datetime as dt
+import numpy as np
 import pandas as pd  		  	   		  		 			  		 			     			  	 
-from util import get_data, plot_data  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
+from util import get_data, plot_data
+
+def author():
+    return 'vsanjeev6'
+
 def compute_portvals(  		  	   		  		 			  		 			     			  	 
     orders_file="./orders/orders.csv",  		  	   		  		 			  		 			     			  	 
     start_val=1000000,  		  	   		  		 			  		 			     			  	 
     commission=9.95,  		  	   		  		 			  		 			     			  	 
     impact=0.005,  		  	   		  		 			  		 			     			  	 
-):  		  	   		  		 			  		 			     			  	 
+):
     """  		  	   		  		 			  		 			     			  	 
     Computes the portfolio values.  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
@@ -57,18 +56,87 @@ def compute_portvals(
     """  		  	   		  		 			  		 			     			  	 
     # this is the function the autograder will call to test your code  		  	   		  		 			  		 			     			  	 
     # NOTE: orders_file may be a string, or it may be a file object. Your  		  	   		  		 			  		 			     			  	 
-    # code should work correctly with either input  		  	   		  		 			  		 			     			  	 
-    # TODO: Your code here  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
-    # In the template, instead of computing the value of the portfolio, we just  		  	   		  		 			  		 			     			  	 
-    # read in the value of IBM over 6 months  		  	   		  		 			  		 			     			  	 
-    start_date = dt.datetime(2008, 1, 1)  		  	   		  		 			  		 			     			  	 
-    end_date = dt.datetime(2008, 6, 1)  		  	   		  		 			  		 			     			  	 
-    portvals = get_data(["IBM"], pd.date_range(start_date, end_date))  		  	   		  		 			  		 			     			  	 
-    portvals = portvals[["IBM"]]  # remove SPY  		  	   		  		 			  		 			     			  	 
-    rv = pd.DataFrame(index=portvals.index, data=portvals.values)  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
-    return rv  		  	   		  		 			  		 			     			  	 
+    # code should work correctly with either input
+
+    orders_df = pd.read_csv(orders_file, index_col='Date', parse_dates=True, na_values=['nan'])
+    #print(orders_df)
+    orders_df.sort_index(inplace = True)
+    #print(orders_df)
+    start_date = orders_df.index[0]
+    end_date = orders_df.index[-1]
+
+    symbols = list(set(orders_df['Symbol'].values))
+    dates = pd.date_range(start_date, end_date)
+    #print("Dates:", dates)
+    #print("Symbols:", symbols)
+
+    """  		  	   		  		 			  		 			     			  	 
+    Prices Dataframe  		  	   		  		 			  		 			     			  	 
+    """
+    prices_df = get_data(symbols, dates)
+    # Handling incomplete data by filling forward first and then backward
+    prices_df.fillna(method="ffill",inplace=True)
+    prices_df.fillna(method="bfill", inplace=True)
+
+    # An additional column "Cash", with values 1
+    prices_df['Cash'] = np.ones(prices_df.shape[0])
+    #print(prices_df)
+
+    """  		  	   		  		 			  		 			     			  	 
+    Trades Dataframe  		  	   		  		 			  		 			     			  	 
+    """
+    trades_df = prices_df.copy()
+    trades_df.ix[:, :] = 0
+
+    # Loop over orders index
+    for date in prices_df.index:
+        if date in orders_df.index:
+            sub_order = orders_df.ix[date:date]
+            #print(sub_order)
+            for i in range(0, sub_order.shape[0]):
+                sym = sub_order.ix[i, 'Symbol']
+                order = sub_order.ix[i, 'Order']
+                shares = sub_order.ix[i, 'Shares']
+                # impact = no. of orders in transaction * price of each share * impact. deduct impact for every transaction
+                impact_deduction = shares * prices_df.ix[date, sym] * impact
+
+                if order == 'SELL':
+                    trades_df.ix[date, sym] += shares * (-1)
+                    trades_df.ix[date, 'Cash'] += prices_df.ix[date, sym] * shares
+                    # Deduction from cash balance for EACH TRADE
+                    trades_df.ix[date, 'Cash'] = trades_df.ix[date, 'Cash'] - commission - impact_deduction
+                if order == 'BUY':
+                    trades_df.ix[date, sym] += shares
+                    trades_df.ix[date, 'Cash'] += prices_df.ix[date, sym] * shares * (-1)
+                    # Deduction from cash balance for EACH TRADE
+                    trades_df.ix[date, 'Cash'] = trades_df.ix[date, 'Cash'] - commission - impact_deduction
+    #print(trades_df)
+
+    """  		  	   		  		 			  		 			     			  	 
+    Holdings Dataframe  		  	   		  		 			  		 			     			  	 
+    """
+    holdings_df = trades_df.copy()
+    holdings_df.ix[:, :] = 0
+    #On first day, all you got is cash (no stock holdings)
+    holdings_df.ix[0, 'Cash'] = start_val
+
+    # special handling of 1st row
+    holdings_df.ix[0, :] += trades_df.ix[0, :]
+
+    for i in range(1, holdings_df.shape[0]):
+        holdings_df.ix[i, :] = holdings_df.ix[i - 1, :] + trades_df.ix[i, :]
+    #print(holdings_df)
+
+    """  		  	   		  		 			  		 			     			  	 
+    Values Dataframe  		  	   		  		 			  		 			     			  	 
+    """
+    values_df = holdings_df.copy()
+    values_df = prices_df * holdings_df
+    #print(values_df)
+
+    portvals = values_df.sum(axis=1)
+    print(portvals)
+
     return portvals  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
@@ -80,7 +148,7 @@ def test_code():
     # note that during autograding his function will not be called.  		  	   		  		 			  		 			     			  	 
     # Define input parameters  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
-    of = "./orders/orders2.csv"  		  	   		  		 			  		 			     			  	 
+    of = "./orders/additional_orders/orders-short.csv"
     sv = 1000000  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
     # Process orders  		  	   		  		 			  		 			     			  	 
@@ -88,42 +156,42 @@ def test_code():
     if isinstance(portvals, pd.DataFrame):  		  	   		  		 			  		 			     			  	 
         portvals = portvals[portvals.columns[0]]  # just get the first column  		  	   		  		 			  		 			     			  	 
     else:  		  	   		  		 			  		 			     			  	 
-        "warning, code did not return a DataFrame"  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
-    # Get portfolio stats  		  	   		  		 			  		 			     			  	 
-    # Here we just fake the data. you should use your code from previous assignments.  		  	   		  		 			  		 			     			  	 
-    start_date = dt.datetime(2008, 1, 1)  		  	   		  		 			  		 			     			  	 
-    end_date = dt.datetime(2008, 6, 1)  		  	   		  		 			  		 			     			  	 
-    cum_ret, avg_daily_ret, std_daily_ret, sharpe_ratio = [  		  	   		  		 			  		 			     			  	 
-        0.2,  		  	   		  		 			  		 			     			  	 
-        0.01,  		  	   		  		 			  		 			     			  	 
-        0.02,  		  	   		  		 			  		 			     			  	 
-        1.5,  		  	   		  		 			  		 			     			  	 
-    ]  		  	   		  		 			  		 			     			  	 
-    cum_ret_SPY, avg_daily_ret_SPY, std_daily_ret_SPY, sharpe_ratio_SPY = [  		  	   		  		 			  		 			     			  	 
-        0.2,  		  	   		  		 			  		 			     			  	 
-        0.01,  		  	   		  		 			  		 			     			  	 
-        0.02,  		  	   		  		 			  		 			     			  	 
-        1.5,  		  	   		  		 			  		 			     			  	 
-    ]  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
-    # Compare portfolio against $SPX  		  	   		  		 			  		 			     			  	 
+        "warning, code did not return a DataFrame"
+
+    # Get portfolio stats
+    start_date = portvals.index.min()
+    end_date = portvals.index.max()
+    """  		  	   		  		 			  		 			     			  	 
+    From Project 2 - optimization.py  		  	   		  		 			  		 			     			  	 
+    """
+    # Cumulative Return
+    cr = (portvals[-1]/portvals[0]) -1
+    # Daily Return
+    daily_returns = (portvals/portvals.shift(1)) -1
+    daily_returns = daily_returns[1:] # Remove first row
+    # Average Daily Return
+    adr = daily_returns.mean()
+    # StDev of Daily Returns (Sample standard deviation)
+    sddr = daily_returns.std(ddof=1)
+    # Sharpe Ratio
+    sr = np.sqrt(252) * (adr / sddr)
+    # Compare portfolio against $SPX
+   
     print(f"Date Range: {start_date} to {end_date}")  		  	   		  		 			  		 			     			  	 
     print()  		  	   		  		 			  		 			     			  	 
-    print(f"Sharpe Ratio of Fund: {sharpe_ratio}")  		  	   		  		 			  		 			     			  	 
-    print(f"Sharpe Ratio of SPY : {sharpe_ratio_SPY}")  		  	   		  		 			  		 			     			  	 
+    print(f"Sharpe Ratio of Fund: {sr}")
+    #print(f"Sharpe Ratio of SPY : {sharpe_ratio_SPY}")
     print()  		  	   		  		 			  		 			     			  	 
-    print(f"Cumulative Return of Fund: {cum_ret}")  		  	   		  		 			  		 			     			  	 
-    print(f"Cumulative Return of SPY : {cum_ret_SPY}")  		  	   		  		 			  		 			     			  	 
+    print(f"Cumulative Return of Fund: {cr}")
+    #print(f"Cumulative Return of SPY : {cum_ret_SPY}")
     print()  		  	   		  		 			  		 			     			  	 
-    print(f"Standard Deviation of Fund: {std_daily_ret}")  		  	   		  		 			  		 			     			  	 
-    print(f"Standard Deviation of SPY : {std_daily_ret_SPY}")  		  	   		  		 			  		 			     			  	 
+    print(f"Standard Deviation of Fund: {sddr}")
+    #print(f"Standard Deviation of SPY : {std_daily_ret_SPY}")
     print()  		  	   		  		 			  		 			     			  	 
-    print(f"Average Daily Return of Fund: {avg_daily_ret}")  		  	   		  		 			  		 			     			  	 
-    print(f"Average Daily Return of SPY : {avg_daily_ret_SPY}")  		  	   		  		 			  		 			     			  	 
+    print(f"Average Daily Return of Fund: {adr}")
+    #print(f"Average Daily Return of SPY : {avg_daily_ret_SPY}")
     print()  		  	   		  		 			  		 			     			  	 
-    print(f"Final Portfolio Value: {portvals[-1]}")  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
+    print(f"Final Portfolio Value: {portvals[-1]}")
+
 if __name__ == "__main__":  		  	   		  		 			  		 			     			  	 
     test_code()  		  	   		  		 			  		 			     			  	 
