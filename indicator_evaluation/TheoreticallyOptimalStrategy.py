@@ -3,11 +3,10 @@ Code implementing a TheoreticallyOptimalStrategy object
 It should implement testPolicy() which returns a trades data frame
 The main part of this code should call marketsimcode as necessary to generate the plots used in the report
 """
-
 """
-Student Name: Jie Lyu 		   	  			  	 		  		  		    	 		 		   		 		  
-GT User ID: jlyu31  		   	  			  	 		  		  		    	 		 		   		 		  
-GT ID: 903329676 
+Student Name: Vaishnavi Sanjeev  		  	   		  		 			  		 			     			  	 
+GT User ID: vsanjeev6  		  	   		  		 			  		 			     			  	 
+GT ID: 903797718   		  	   		  		 			  		 			     			  	 
 """
 
 
