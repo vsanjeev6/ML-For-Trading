@@ -52,7 +52,8 @@ def ema(sd, ed, symbol):
     df_price['Signal'] = 0.0
     df_price['Signal'] = np.where(df_ema_20 > df_ema_50, 1.0, 0.0)
     df_price['Position'] = df_price['Signal'].diff()
-    print(df_price)
+    df_price.dropna()
+    #print(df_price)
 
     # Plot
     fig = plt.figure(figsize=(10, 5))
@@ -75,31 +76,121 @@ def ema(sd, ed, symbol):
     plt.savefig("EMA.png")
     plt.clf()
 
-
-
-
-
-
     return normalized_df_ema_20, normalized_df_ema_50
 
+"""
+Indicator 2: Simple Moving Average and Price/SMA
+"""
+def sma(sd, ed, symbol, prices_df):
+    print(prices_df)
+    prices = prices_df[symbol]
+    prices = prices / prices[0]
+
+    df_indicators = pd.DataFrame(index=prices.index)
+    # Remove the dates before the start_date
+    df_indicators = df_indicators.truncate(before=sd)
+
+    df_indicators['price'] = prices
+    df_indicators['rolling mean'] = prices.rolling(window=20, center=False).mean()
+    df_indicators['pricebySMA'] = df_indicators['price'] / df_indicators['rolling mean']
+
+    # Plot
+    fig = plt.subplots(figsize=(10, 5))
+    plt.plot(prices, label="JPM price (normalized)", color="blue")
+    plt.plot(df_indicators['rolling mean'], label="SMA", color="red")
+    plt.xlabel('Date')
+    plt.ylabel('Price (normalized)')
+    plt.title('SMA')
+    plt.xticks(rotation=10)
+    plt.grid()
+    plt.legend()
+    plt.savefig("SMA.png")
+    plt.clf()
+
+    fig2 = plt.plot(figsize=(10, 5))
+    plt.plot(df_indicators['pricebySMA'], label="P/SMA", color="blue")
+    plt.xlabel('Date')
+    plt.ylabel('Price (normalized)')
+    plt.title('P/SMA')
+    plt.grid()
+    plt.legend()
+    plt.xticks(rotation=10)
+    plt.axhline(y=1.1, linestyle='--', color="green")
+    plt.axhline(y=0.9, linestyle='--',color= "red")
+    plt.savefig("Price_By_SMA.png")
+    plt.clf()
+
+"""
+Indicator 3: Bollinger Band Percent
+"""
+def bb(sd, ed, symbol, prices_df):
+    prices = prices_df[symbol]
+    prices = prices / prices[0]
+
+    df_indicators = pd.DataFrame(index=prices.index)
+    # 2] bollinger bands
+    rm = prices.rolling(window=10, center=False).mean()
+    sd = prices.rolling(window=10, center=False).std()
+    upband = rm + (2 * sd)
+    dnband = rm - (2 * sd)
+    df_indicators['upper band'] = upband
+    df_indicators['lower band'] = dnband
+
+    # BB value
+    bb_value = (prices - rm) / (25 * sd)
+    df_indicators['bb value'] = bb_value
+
+    # 3] Commodity channel index
+    cci = (prices - rm) / (2.5 * prices.std())
+    df_indicators['Commodity Channel Index'] = cci
+
+    # 4] Volatility
+    volatility = prices.rolling(window=7, center=False).std()
+    df_indicators['Volatility'] = volatility * 3.5
+
+    # Plot
+    fig = plt.figure(figsize=(10, 5))
+    ax = fig.add_subplot(1, 1, 1)
+    #plt.plot(prices, label="JPM price (normalized)", color="blue")
+    #plt.plot(df_indicators['rolling mean'], label="SMA", color="red")
+    plt.plot(df_indicators['upper band'], label="SMA", color="green")
+    plt.plot(df_indicators['lower band'], label="SMA", color="purple")
+    plt.plot(df_indicators['bb value'], label="SMA", color="orange")
+
+    # Add BUY and SELL signals to the chart
+    #ax.plot(df_price.loc[df_price.Position == 1.0].index, normalized_df_ema_20[df_price.Position == 1.0], '^',
+     #       markersize=10, color='g', label='BUY')
+    #ax.plot(df_price.loc[df_price.Position == -1.0].index, normalized_df_ema_20[df_price.Position == -1.0], 'v',
+       #     markersize=10, color='r', label='SELL')
+
+    # Add chart labels and legend
+    plt.xlabel('Date')
+    plt.xticks(rotation=30)
+    plt.ylabel('Price (normalized)')
+    plt.title('SMA Crossover Trading Strategy')
+    plt.grid()
+    plt.legend()
+    plt.savefig("BB.png")
+    plt.clf()
 
 # MACD: Moving Average Convergence Divergence
-# macd_signal > macd_raw, SELL
-# macd_signal < macd_raw, BUY
-def macd(sd, ed, symbol, plot=False):
+def macd(sd, ed, symbol):
     # look up history to calculate the ema for the 28 days
     # since the max ema windows size is 26, we can say 52 is safe
     delta = dt.timedelta(52)
-    extedned_sd = sd - delta
 
-    df_price = get_data([symbol], pd.date_range(extedned_sd, ed))
+    df_price = get_data([symbol], pd.date_range((sd - delta), ed))
+    #print(df_price)
+
     df_price = df_price[[symbol]]
     df_price = df_price.ffill().bfill()
+
 
     ema_12 = df_price.ewm(span=12, adjust=False).mean()
     ema_26 = df_price.ewm(span=26, adjust=False).mean()
     macd_raw = ema_12 - ema_26
     macd_signal = macd_raw.ewm(span=9, adjust=False).mean()
+
 
     # remove history price
     df_price = df_price.truncate(before=sd)
@@ -107,101 +198,41 @@ def macd(sd, ed, symbol, plot=False):
     ema_26 = ema_26.truncate(before=sd)
     macd_raw = macd_raw.truncate(before=sd)
     macd_signal = macd_signal.truncate(before=sd)
+    histogram = macd_raw - macd_signal
 
-    if plot == True:
-        fig = plt.figure(figsize=(14, 8))
-        plt.suptitle("MACD")
-        plt.xlabel("Date")
-        plt.ylabel('normalized price')
+    fig = plt.figure(figsize=(14, 8))
+    plt.suptitle("MACD")
+    plt.xlabel("Date")
+    plt.ylabel('normalized price')
 
-        # normalizing price and EMA
-        normalized_ema_12 = ema_12[symbol] / ema_12[symbol][0]
-        normalized_ema_26 = ema_26[symbol] / ema_26[symbol][0]
-        normalized_df_price = df_price[symbol] / df_price[symbol][0]
+    # normalizing price and EMA
+    normalized_ema_12 = ema_12[symbol] / ema_12[symbol][0]
+    normalized_ema_26 = ema_26[symbol] / ema_26[symbol][0]
+    normalized_df_price = df_price[symbol] / df_price[symbol][0]
 
-        ax1 = plt.subplot(211)
-        ax1.plot(normalized_ema_12, label="12 days EMA", color="orange")
-        ax1.plot(normalized_ema_26, label="26 days EMA", color="red")
-        ax1.plot(normalized_df_price, label="normalized price", color="blue")
-        ax1.legend()
-        plt.xlabel("Date")
-        plt.ylabel('Normalized price')
-        ax1.grid()
+    ax1 = plt.subplot(211)
+    ax1.plot(normalized_ema_12, label="12 days EMA", color="orange")
+    ax1.plot(normalized_ema_26, label="26 days EMA", color="red")
+    ax1.plot(normalized_df_price, label="normalized price", color="blue")
+    ax1.legend()
+    plt.xlabel("Date")
+    plt.ylabel('Normalized price')
+    ax1.grid()
 
-        ax2 = plt.subplot(212)
-        ax2.plot(macd_raw, label="MACD", color="orange")
-        ax2.plot(macd_signal, label="MACD Signal", color="red")
-        ax2.grid()
-        plt.xlabel("Date")
-        ax2.legend()
+    ax2 = plt.subplot(212)
+    ax2.plot(macd_raw, label="MACD", color="orange")
+    ax2.plot(macd_signal, label="MACD Signal", color="red")
+    ax2.grid()
+    plt.xlabel("Date")
+    ax2.legend()
 
-        fig.autofmt_xdate()
+    fig.autofmt_xdate()
 
-        plt.savefig("part1_macd.png", bbox_inches='tight')
-        # plt.show()
-        plt.clf()
+    plt.savefig("part1_macd.png", bbox_inches='tight')
+    # plt.show()
+    plt.clf()
 
     return macd_raw, macd_signal
-
-
-# TSI: True Strength Index
-# tsi < 0, SELL
-# tsi > 0, BUY
-# add a cushion to be more condifent e.g. tsi < -0.05 and tsi > 0.05
-def tsi(sd, ed, symbol, plot=False):
-    # look up history to calculate the ema for the 24 days
-    # since the max ema windows size is 20, we can say 50 is safe
-    delta = dt.timedelta(50)
-    extedned_sd = sd - delta
-
-    df_price = get_data([symbol], pd.date_range(extedned_sd, ed))
-    df_price = df_price[[symbol]]
-    df_price = df_price.ffill().bfill()
-
-    # calculate, smoothing and double smoothing price change
-    diff = df_price - df_price.shift(1)
-    ema_25 = diff.ewm(span=25, adjust=False).mean()
-    ema_13 = ema_25.ewm(span=13, adjust=False).mean()
-
-    # calculate, smoothing and double smoothing absolute price change
-    abs_diff = abs(diff)
-    abs_ema_25 = abs_diff.ewm(span=25, adjust=False).mean()
-    abs_ema_13 = abs_ema_25.ewm(span=13, adjust=False).mean()
-
-    df_tsi = ema_13 / abs_ema_13
-
-    # remove history price
-    df_tsi = df_tsi.truncate(before=sd)
-
-    if plot == True:
-        fig = plt.figure(figsize=(14, 8))
-        plt.suptitle("TSI")
-        plt.xlabel("Date")
-        plt.ylabel('Ratio')
-
-        # normalizing price and EMA
-        normalized_df_price = df_price[symbol] / df_price[symbol][0]
-
-        ax1 = plt.subplot(211)
-        ax1.plot(normalized_df_price, label="normalized price", color="blue")
-        ax1.legend()
-        plt.xlabel("Date")
-        plt.ylabel('Normalized price')
-        ax1.grid()
-
-        ax2 = plt.subplot(212)
-        ax2.plot(df_tsi, label="TSI", color="orange")
-        ax2.grid()
-        plt.xlabel("Date")
-        ax2.legend()
-
-        fig.autofmt_xdate()
-
-        plt.savefig("part1_tsi.png", bbox_inches='tight')
-        # plt.show()
-        plt.clf()
-
-    return df_tsi
 
 
 def report():
@@ -209,26 +240,32 @@ def report():
     ed = dt.datetime(2009, 12, 31)
     symbol = 'JPM'
 
-    # sd = dt.datetime(2008, 1, 1)
-    # ed = dt.datetime(2008, 1, 30)
-    # symbol = 'JPM'
-
-    # sd = dt.datetime(2011, 8, 1)
-    # ed = dt.datetime(2012, 9, 1)
-    # symbol = 'NKE'
+    dates = pd.date_range(sd, ed)
+    prices_df = get_data([symbol], dates)
+    prices_df = prices_df.ffill().bfill()
 
     # plot ema
     df_ema = ema(sd, ed, symbol)
 
-    # plot macd
-    df_macd = macd(sd, ed, symbol, plot=True)
+    # SMA
+    sma(sd, ed, symbol, prices_df)
+    bb(sd, ed, symbol, prices_df)
 
-    # plot tsi
-    df_tsi = tsi(sd, ed, symbol, plot=True)
+    # Bollinger
+    #sma(sd, ed, symbol, prices_df)[['upper band', 'lower band', 'bb value', 'rolling mean']].plot(figsize=(20, 7))
+    # CCI
+    #sma(sd, ed, symbol, prices_df)[['Commodity Channel Index']].plot(figsize=(20, 7))
+
+    # Volatility
+    #sma(sd, ed, symbol, prices_df)[['Volatility']].plot(figsize=(20, 7))
+
+   # plt.axhline(y=0, linestyle=':')
+   # plt.axhline(y=0.04, linestyle='--')
+   # plt.axhline(y=-0.04, linestyle='--')
 
 
 def author():
-    return 'jlyu31'
+    return 'vsanjeev6'
 
 
 if __name__ == "__main__":
