@@ -1,114 +1,116 @@
 """
-Student Name: Vaishnavi Sanjeev
-GT User ID: vsanjeev6
-GT ID: 903797718
+An improved version of your marketsim code that accepts a "trades" data frame (instead of a file)
+"""
+"""
+Student Name: Jie Lyu 		   	  			  	 		  		  		    	 		 		   		 		  
+GT User ID: jlyu31  		   	  			  	 		  		  		    	 		 		   		 		  
+GT ID: 903329676 
 """
 
-import datetime as dt
-import numpy as np
-import pandas as pd
-from util import get_data, plot_data
+import pandas as pd  		   	  			  	 		  		  		    	 		 		   		 		  
+import numpy as np  		   	  			  	 		  		  		    	 		 		   		 		  
+import datetime as dt  		   	  			  	 		  		  		    	 		 		   		 		  
+import os  		   	  			  	 		  		  		    	 		 		   		 		  
+from util import get_data, plot_data  		   	  			  	 		  		  		    	 		 		   		 		  
 
 
-def author():
-    return 'vsanjeev6'
+def compute_portvals(orders_df, start_val = 1000000, commission=9.95, impact=0.005):  		   	  			  	 		  		  		    	 		 		   		 		  
+
+    ##### setting up
+    start_date, end_date, orders_dates = get_dates(orders_df)
+    portvals = get_data(['SPY'], pd.date_range(start_date, end_date), addSPY=True, colname = 'Adj Close')
+    portvals = portvals.rename(columns={'SPY': 'value'})
+    dates = portvals.index
+    
+    #TODO Modification for Project 6
+    symbol = orders_df.columns[0]
+
+    ##### my account
+    current_cash = start_val
+    shares_owned = {}           # symbol (str) -> number (int)
+    symbol_table = {}        # symbol (str) -> prices (pd.df)
+
+    ##### going through dates
+    for date in dates:
 
 
-def compute_portvals(orders_df, sd=dt.datetime(2008,1,1), ed=dt.datetime(2009,12,31), start_val = 1000000, commission=9.95, impact=0.005):
-    """
-    Computes the portfolio values.
+        #TODO Modification for Project 6
+        trade = orders_df.loc[date].loc[symbol]
 
-    :param orders_file: Path of the order file or the file object
-    :type orders_file: str or file object
-    :param start_val: The starting value of the portfolio
-    :type start_val: int
-    :param commission: The fixed amount in dollars charged for each transaction (both entry and exit)
-    :type commission: float
-    :param impact: The amount the price moves against the trader compared to the historical data at each transaction
-    :type impact: float
-    :return: the result (portvals) as a single-column dataframe, containing the value of the portfolio for each trading day in the first column from start_date to end_date, inclusive.
-    :rtype: pandas.DataFrame
-    """
+        if trade != 0:
+            if trade < 0:
+                order = 'SELL'
+                shares = abs(trade)
+            else:
+                order = 'BUY'
+                shares = trade
+            
+            current_cash, shares_owned, symbol_table = \
+                update_share_cash(symbol, order, shares, current_cash, shares_owned, symbol_table, date, end_date, commission, impact)
+        
+        ### calculating current protfolio value
+        portvals.loc[date].loc['value'] = compute_portval(date, current_cash, shares_owned, symbol_table)
+
+    return portvals  		    
+
+
+
+"""########
+Helper functions for compute_portvals
+"""########
+
+
+# returns the start_date, end_date and orders_dates
+def get_dates(orders_df):
     orders_dates = orders_df.index
     start_date = orders_df.index[0]
     end_date = orders_df.index[-1]
+    return start_date, end_date, orders_dates
 
-    symbols = list(set(orders_df['Symbol'].values))
-    dates = pd.date_range(start_date, end_date)
-    print("Dates:", dates)
-    print("Symbols:", symbols)
 
-    """  		  	   		  		 			  		 			     			  	 
-    Prices Dataframe  		  	   		  		 			  		 			     			  	 
-    """
-    prices_df = get_data(symbols, dates)
-    # Handling incomplete data by filling forward first and then backward
-    prices_df.fillna(method="ffill",inplace=True)
-    prices_df.fillna(method="bfill", inplace=True)
+# update current_cash and shares_owned from an order
+def update_share_cash(symbol, order, shares, current_cash, shares_owned, symbol_table, curr_date, end_date, commission, impact):
 
-    # An additional column "Cash", with values 1
-    prices_df['Cash'] = np.ones(prices_df.shape[0])
-    # print(prices_df)
+    # if we have not loaded the symbol information yet
+    if symbol not in symbol_table:
+        # get the df for the symbol
+        symbol_df = get_data([symbol], pd.date_range(curr_date, end_date), addSPY=True, colname = 'Adj Close')  
+        # back fill and forward fill missing informations on market opend dates
+        symbol_df = symbol_df.ffill().bfill()
+        # add the symbol df to symbol_table
+        symbol_table[symbol] = symbol_df
 
-    """  		  	   		  		 			  		 			     			  	 
-    Trades Dataframe  		  	   		  		 			  		 			     			  	 
-    """
-    trades_df = prices_df.copy()
-    trades_df.ix[:, :] = 0
+    # update the share and cash information
+    if order == 'BUY':
+        share_change = shares
+        cash_change = -symbol_table[symbol].loc[curr_date].loc[symbol] * (1 + impact) * shares
+    elif order == 'SELL':
+        share_change = -shares
+        cash_change = symbol_table[symbol].loc[curr_date].loc[symbol] * (1 - impact) * shares
+    else:
+        print('ERROR: unknow order type')
 
-    # Loop over the prices dataframe index
-    # Update the trades dataframe only during dates an order was placed
-    for date in prices_df.index:
-        if date in orders_df.index:
-            orders_on_same_day = orders_df.ix[date:date]
-            # print(orders_on_same_day)
-            for i in range(0, orders_on_same_day.shape[0]):
-                sym = orders_on_same_day.ix[i, 'Symbol']
-                order = orders_on_same_day.ix[i, 'Order']
-                shares = orders_on_same_day.ix[i, 'Shares']
-                # impact = f(no. of shares * share price * impact %)
-                # Deduct impact for every transaction from cash
-                impact_deduction = shares * prices_df.ix[date, sym] * impact
+    shares_owned[symbol] = shares_owned.get(symbol, 0) + share_change
+    current_cash += cash_change - commission
 
-                if order == 'SELL':
-                    trades_df.ix[date, sym] = trades_df.ix[date, sym] + (shares * (-1))
-                    trades_df.ix[date, 'Cash'] = trades_df.ix[date, 'Cash'] + (prices_df.ix[date, sym] * shares)
-                    # Deduction from cash balance for EACH TRADE
-                    trades_df.ix[date, 'Cash'] = trades_df.ix[date, 'Cash'] - commission - impact_deduction
-                if order == 'BUY':
-                    trades_df.ix[date, sym] = trades_df.ix[date, sym] + shares
-                    trades_df.ix[date, 'Cash'] = trades_df.ix[date, 'Cash'] + (prices_df.ix[date, sym] * shares * (-1))
-                    # Deduction from cash balance for EACH TRADE
-                    trades_df.ix[date, 'Cash'] = trades_df.ix[date, 'Cash'] - commission - impact_deduction
-    # print(trades_df)
+    return current_cash, shares_owned, symbol_table
 
-    """  		  	   		  		 			  		 			     			  	 
-    Holdings Dataframe  		  	   		  		 			  		 			     			  	 
-    """
-    holdings_df = trades_df.copy()
-    # Initialize all entries to 0's
-    holdings_df.ix[:, :] = 0
-    # On first day, all you got is cash (no stock holdings)
-    holdings_df.ix[0, 'Cash'] = start_val
 
-    # 1st row
-    holdings_df.ix[0, :] += trades_df.ix[0, :]
+# compute the portfolio value for a day
+def compute_portval(curr_date, current_cash, shares_owned, symbol_table):
+    shares_worth = 0
+    for symbol in shares_owned:
+        shares_worth += symbol_table[symbol].loc[curr_date].loc[symbol] * shares_owned[symbol]
+    return current_cash + shares_worth
 
-    for i in range(1, holdings_df.shape[0]):
-        holdings_df.ix[i, :] = holdings_df.ix[i - 1, :] + trades_df.ix[i, :]
-    # print(holdings_df)
 
-    """  		  	   		  		 			  		 			     			  	 
-    Values Dataframe  		  	   		  		 			  		 			     			  	 
-    """
-    values_df = holdings_df.copy()
-    values_df = prices_df * holdings_df
-    # print(values_df)
+"""########
+end of helper functions
+"""########
 
-    portvals = values_df.sum(axis=1)
-    # print(portvals)
 
-    return portvals
-
-if __name__ == "__main__":
+def author():
+    return 'jlyu31'
+	  			  	 		  		  		    	 		 		   		 		  
+if __name__ == "__main__":  		   	  			  	 		  		  		    	 		 		   		 		  
     pass

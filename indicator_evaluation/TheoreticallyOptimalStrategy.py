@@ -1,98 +1,169 @@
 """
-Student Name: Vaishnavi Sanjeev
-GT User ID: vsanjeev6
-GT ID: 903797718
+Code implementing a TheoreticallyOptimalStrategy object
+It should implement testPolicy() which returns a trades data frame
+The main part of this code should call marketsimcode as necessary to generate the plots used in the report
 """
 
 """
-Implement Part 1: Theoretically Optimal Strategy
+Student Name: Jie Lyu 		   	  			  	 		  		  		    	 		 		   		 		  
+GT User ID: jlyu31  		   	  			  	 		  		  		    	 		 		   		 		  
+GT ID: 903329676 
 """
 
-import datetime as dt
-import numpy as np
-import pandas as pd
+
+"""
+[Constrains]
+possible actions {-2000, -1000, 0, 1000, 2000}
+possible positions {-1000, 0, 1000}
+[Policy]
+If price goes up tomorrow, I go long.
+If price goes down tomorrow, I go short.
+"""
+
+
+
+
 from util import get_data, plot_data
-import matplotlib.pyplot as plt
+import datetime as dt
+import pandas as pd
 from marketsimcode import compute_portvals
+import matplotlib.pyplot as plt
+
+
+class TheoreticallyOptimalStrategy:
+
+	def testPolicy(self, symbol, sd, ed, sv):
+
+		# setting up
+		symbol = symbol[0]
+		df = get_data([symbol], pd.date_range(sd, ed))
+		price_df = df[[symbol]]
+		price_df = price_df.ffill().bfill()
+
+		df_trades = df[['SPY']]
+		df_trades = df_trades.rename(
+			columns={'SPY': symbol}).astype({symbol: 'int32'})
+		df_trades[:] = 0
+		dates = df_trades.index
+
+		# current_cash = sv
+		current_position = 0
+
+		# making trades
+		for i in range(len(dates) - 1):
+
+			if price_df.loc[dates[i+1]].loc[symbol] > price_df.loc[dates[i]].loc[symbol]:
+				action = 1000 - current_position
+			else:
+				action = -1000 - current_position
+			df_trades.loc[dates[i]].loc[symbol] = action
+			current_position += action
+		print(df_trades)
+		return df_trades
+
 
 def author():
-    return 'vsanjeev6'
+	return 'jlyu31'
 
 
-def testPolicy(symbol="JPM",  sd=dt.datetime(2010, 1, 1), ed=dt.datetime(2011,12,31), sv = 100000):
-    dates = pd.date_range(sd, ed)
-    df_prices = get_data([symbol], dates)
-    prices = df_prices[symbol]
-    prices = prices / prices[0]
-
-    df1 = pd.DataFrame()
-    df2 = pd.DataFrame()
-    df1['Order'] = prices < prices.shift(-1)
-
-    df1['Order'].replace(True, 'BUY', inplace=True)
-    df1['Order'].replace(False, 'SELL', inplace=True)
-    print(df1)
-
-    df2['Order'] = df1['Order'].append(
-        df1['Order'].shift(1).replace('BUY', 'TMP').replace('SELL', 'BUY').replace('TMP', 'SELL').dropna())
-    print(df2)
-
-    df2['Symbol'] = symbol
-    df2['Shares'] = 1000
-    df2.sort_index(inplace=True)
-
-    print(df2)
-    return df2
-
-def test_code():
-    test_sd = dt.datetime(2008, 1, 1)
-    test_ed = dt.datetime(2009,12,31)
-    sv = 100000
-    symbol = 'JPM'
-
-    dates = pd.date_range(test_sd, test_ed)
-    prices_all = get_data([symbol], dates)
-
-    prices = prices_all[symbol]
-    prices = prices / prices[0]
+"""########
+Helper functions for report()
+"""
 
 
-    df3 = testPolicy(symbol="JPM", sd=test_sd, ed=test_ed, sv=100000)
-    port_vals = compute_portvals(df3, test_sd, test_ed, sv, 0, 0)
-    # port_vals
+def get_benchmark(sd, ed, sv):
+	# starting with $100,000 cash, investing in 1000 shares of JPM and holding that position
 
-    df3 = pd.DataFrame(index=prices.index, columns=['Order', 'Symbol', 'Shares'])
-    df3['Order'] = 'BUY'
-    df3['Symbol'] = 'JPM'
-    df3['Shares'] = 1000
-    df4 = df3[:1]
-    # df4
-    df5 = df3.copy().tail(1)
-    df5['Order'] = 'BUY'
-    df5['Symbol'] = 'JPM'
-    df5['Shares'] = 0
-    df4 = df4.append(df5)
-    # df4
-    bench_vals = compute_portvals(df4, test_sd, test_ed, sv, 0, 0)
+	df_trades = get_data(['SPY'], pd.date_range(sd, ed))
+	df_trades = df_trades.rename(columns={'SPY': 'JPM'}).astype({'JPM': 'int32'})
+	df_trades[:] = 0
+	df_trades.loc[df_trades.index[0]] = 1000
+	portvals = compute_portvals(df_trades, sv, commission=0.00, impact=0.00)
+	return portvals
 
-    # normalize
-    bench_vals = bench_vals / bench_vals[0]
-    port_vals = port_vals / port_vals[0]
+# takes in pd.df and prints stats
+def print_stats(benchmark, theoretical):
+	benchmark, theoretical = benchmark['value'], theoretical['value']
 
-    # bench_vals
-    plt.figure(figsize=(14, 8))
-    plt.title("TheoreticallyOptimalStrategy")
-    plt.xlabel("Date")
-    plt.ylabel("Cumulative Return")
-    plt.xticks(rotation=30)
-    plt.grid()
-    plt.plot(bench_vals, label="benchmark", color="purple")
-    plt.plot(port_vals, label="theoretical", color="red")
-    plt.legend()
-    plt.savefig("theoretical.png", bbox_inches='tight')
-    plt.show()
-    plt.clf()
+	# [Cumulative Return]
+	cr_ben = benchmark[-1] / benchmark[0] - 1
+	cr_the = theoretical[-1] / theoretical[0] - 1
+
+	# adily return in percentage
+	dr_ben = (benchmark / benchmark.shift(1) - 1).iloc[1:]
+	dr_the = (theoretical / theoretical.shift(1) - 1).iloc[1:]
+
+	# [Stdev of daily returns]
+	sddr_ben = dr_ben.std()
+	sddr_the = dr_the.std()
+
+	# [Mean of daily returns]
+	adr_ben = dr_ben.mean()
+	adr_the = dr_the.mean()
+
+	print("")
+	print("[TheoreticallyOptimalStrategy]")
+	print("Cumulative return: " + str(cr_the))
+	print("Stdev of daily returns: " + str(sddr_the))
+	print("Mean of daily returns: " + str(adr_the))
+	print("")
+	print("[Benchmark]")
+	print("Cumulative return: " + str(cr_ben))
+	print("Stdev of daily returns: " + str(sddr_ben))
+	print("Mean of daily returns: " + str(adr_ben))
+	print("")
+
+# takes in pd.df and plots graphs
+def plot_graphes(benchmark_portvals, theoretical_portvals):
+
+	# normalize
+	benchmark_portvals['value'] = benchmark_portvals['value'] / benchmark_portvals['value'][0]
+	theoretical_portvals['value'] = theoretical_portvals['value'] / theoretical_portvals['value'][0]
+
+	plt.figure(figsize=(14,8))
+	plt.title("TheoreticallyOptimalStrategy")
+	plt.xlabel("Date")
+	plt.ylabel("Cumulative Return")
+	plt.xticks(rotation=30)
+	plt.grid()
+	plt.plot(benchmark_portvals, label="benchmark", color = "green")
+	plt.plot(theoretical_portvals, label="theoritical", color = "red")
+	plt.legend()
+	plt.savefig("theoretical.png", bbox_inches='tight')
+	# plt.show()
+	plt.clf()
+
+
+"""########
+end of helper functions
+"""
+
+
+def report():
+
+	# testing conditions
+	sv = 100000
+	sd = dt.datetime(2008, 1, 1)
+	# ed = dt.datetime(2008, 1, 15)
+	ed = dt.datetime(2009,12,31)
+
+	# get theoretical performance
+	ms = TheoreticallyOptimalStrategy()
+	df_trades = ms.testPolicy(['JPM'], sd=sd, ed=ed, sv=sv)
+	theoretical_portvals = compute_portvals(
+		df_trades, sv, commission=0.00, impact=0.00)
+	# print(theoretical_portvals)
+
+	# get benchmark performance
+	benchmark_portvals = get_benchmark(sd, ed, sv)
+	# print(benchmark_portvals)
+
+	# get stats
+	print_stats(benchmark_portvals, theoretical_portvals)
+
+	# plot graph
+	plot_graphes(benchmark_portvals, theoretical_portvals)
 
 
 if __name__ == "__main__":
-    test_code()
+	report()
