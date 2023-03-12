@@ -218,10 +218,7 @@ def cci(sd, ed, symbol, prices_df,window=20):
     prices_df['High'] = prices_df['High'] * prices_df['adjustment_factor']
     prices_df['Low'] = prices_df['Low'] * prices_df['adjustment_factor']
     prices_df = prices_df.ffill().bfill()
-
     print("Final Prices\n", prices_df)
-
-    #prices_df = prices_df/prices_df[0]
 
     typical_price = (prices_df['High'] + prices_df['Low'] + prices_df['Adj Close']) / 3
     mean_deviation = abs(typical_price - typical_price.rolling(window).mean()).mean()
@@ -235,17 +232,36 @@ def cci(sd, ed, symbol, prices_df,window=20):
     plt.title('Commodity Channel Index')
     plt.grid()
     plt.legend()
-    plt.xticks(rotation=20)
-    plt.axhline(y=150, color='r', linestyle='-')
-    plt.axhline(y=-150, color='g', linestyle='-')
+    plt.xticks(rotation=10)
+    plt.axhline(y=100, color='r', linestyle='-')
+    plt.axhline(y=-100, color='g', linestyle='-')
     plt.savefig("CCI.png")
     plt.clf()
 
 
-def momentum():
-    # 4] Volatility
-    volatility = prices.rolling(window=7, center=False).std()
-    df_indicators['Volatility'] = volatility * 3.5
+def momentum(sd, ed, symbol, prices_df, window=20):
+    prices = prices_df[symbol]
+    prices = prices / prices[0]
+    # Empty Dataframe
+    df_indicators = pd.DataFrame(index=prices.index)
+
+    momentum = (prices / prices.shift(window)) - 1
+
+    df_indicators['Momentum'] = momentum
+
+    fig = plt.figure(figsize=(10, 5))
+    plt.plot(df_indicators['Momentum'], label="Momentum", color="blue")
+    plt.xlabel('Date')
+    plt.xticks(rotation=10)
+    plt.ylabel('Price (normalized)')
+    plt.title('Momentum')
+    plt.axhline(y=0, color='grey', linestyle='-')
+    plt.axhline(y=0.05, color='green', linestyle='-')
+    plt.axhline(y=-0.05, color='red', linestyle='-')
+    plt.grid()
+    plt.legend()
+    plt.savefig("Momentum.png")
+    plt.clf()
 
 
 def report():
@@ -261,6 +277,7 @@ def report():
     #sma(sd, ed, symbol, prices_df,window=20)
     #bb(sd, ed, symbol, prices_df,window=20)
     cci(sd, ed, symbol, prices_df, window=20)
+    momentum(sd, ed, symbol, prices_df, window=20)
 
 
 def author():
