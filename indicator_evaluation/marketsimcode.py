@@ -9,6 +9,9 @@ import numpy as np
 import datetime as dt
 from util import get_data, plot_data
 
+def author():
+    return 'vsanjeev6'
+
 def compute_portvals(orders_df, start_val = 1000000, commission=9.95, impact=0.005):
     orders_dates = orders_df.index
     start_date = orders_df.index[0]
@@ -58,9 +61,6 @@ def compute_daily_portval(curr_date, current_cash, shares_owned, symbol_table):
     for symbol in shares_owned:
         shares_worth += symbol_table[symbol].loc[curr_date].loc[symbol] * shares_owned[symbol]
     return current_cash + shares_worth
-
-def author():
-    return 'vsanjeev6'
 	  			  	 		  		  		    	 		 		   		 		  
 if __name__ == "__main__":  		   	  			  	 		  		  		    	 		 		   		 		  
     pass

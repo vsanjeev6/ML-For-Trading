@@ -18,8 +18,10 @@ Future versions of pandas will require you to explicitly register matplotlib con
 """
 pd.plotting.register_matplotlib_converters()
 
+def author():
+    return 'vsanjeev6'
+
 def testPolicy(symbol, sd, ed, sv):
-    symbol = symbol[0]
     df = get_data([symbol], pd.date_range(sd, ed))
     price_df = df[[symbol]]
     price_df = price_df.ffill().bfill()
@@ -30,7 +32,6 @@ def testPolicy(symbol, sd, ed, sv):
     dates = df_trades.index
     current_position = 0
 
-    # making trades
     for i in range(len(dates) - 1):
         if price_df.loc[dates[i + 1]].loc[symbol] > price_df.loc[dates[i]].loc[symbol]:
             action = 1000 - current_position
@@ -38,11 +39,18 @@ def testPolicy(symbol, sd, ed, sv):
             action = -1000 - current_position
         df_trades.loc[dates[i]].loc[symbol] = action
         current_position += action
-    #print(df_trades)
-    return df_trades
+    """
+    1. Market Sim Portion
+    2. Benchmarking
+    3. Computing Statistics
+    4. Plotting Graph
+    """
+    theoretical_portvals = compute_portvals(df_trades, sv, commission=0.00, impact=0.00)
+    benchmark_portvals = get_benchmark(sd, ed, sv)
+    print_stats(benchmark_portvals, theoretical_portvals)
+    plotting_utility_function(benchmark_portvals, theoretical_portvals)
 
-def author():
-    return 'vsanjeev6'
+    return df_trades
 
 def get_benchmark(sd, ed, sv):
     df_trades = get_data(['SPY'], pd.date_range(sd, ed))
@@ -59,18 +67,19 @@ def print_stats(benchmark, theoretical):
     cr_ben = benchmark[-1] / benchmark[0] - 1
     cr_the = theoretical[-1] / theoretical[0] - 1
 
-    # daily return in percentage
+    # Daily Return
     dr_ben = (benchmark / benchmark.shift(1) - 1).iloc[1:]
     dr_the = (theoretical / theoretical.shift(1) - 1).iloc[1:]
 
-    # [Stdev of daily returns]
+    # Stdev of daily returns
     sddr_ben = dr_ben.std()
     sddr_the = dr_the.std()
 
-    # [Mean of daily returns]
+    # Mean of daily returns
     adr_ben = dr_ben.mean()
     adr_the = dr_the.mean()
 
+    """
     print("======TheoreticallyOptimalStrategy======")
     print("Cumulative Return: " + str(cr_the))
     print("Stdev of daily returns: " + str(sddr_the))
@@ -80,14 +89,15 @@ def print_stats(benchmark, theoretical):
     print("Cumulative Return: " + str(cr_ben))
     print("Stdev of daily returns: " + str(sddr_ben))
     print("Mean of daily returns: " + str(adr_ben))
+    """
 
 def plotting_utility_function(benchmark_portvals, theoretical_portvals):
-    # normalize
+    # Normalize
     benchmark_portvals['value'] = benchmark_portvals['value'] / benchmark_portvals['value'][0]
     theoretical_portvals['value'] = theoretical_portvals['value'] / theoretical_portvals['value'][0]
 
     plt.figure(figsize=(10, 5))
-    plt.title("Theoretically Optimal Strategy")
+    plt.title("Theoretically Optimal Strategy Vs. Benchmark for JPM")
     plt.xlabel("Date")
     plt.ylabel("Normalized Prices")
     plt.xticks(rotation=30)
@@ -95,30 +105,10 @@ def plotting_utility_function(benchmark_portvals, theoretical_portvals):
     plt.plot(benchmark_portvals, label="Benchmark", color="purple")
     plt.plot(theoretical_portvals, label="Theoretically Optimal Strategy", color="red")
     plt.legend()
-    plt.savefig("TOS.png", bbox_inches='tight')
+    plt.savefig("images/TOS.png", bbox_inches='tight')
     plt.clf()
 
-def report():
-    # testing conditions
-    sv = 100000
-    sd = dt.datetime(2008, 1, 1)
-    ed = dt.datetime(2009, 12, 31)
-
-    # get theoretical performance
-    df_trades = testPolicy(['JPM'], sd=sd, ed=ed, sv=sv)
-    theoretical_portvals = compute_portvals(df_trades, sv, commission=0.00, impact=0.00)
-    # print(theoretical_portvals)
-
-    # get benchmark performance
-    benchmark_portvals = get_benchmark(sd, ed, sv)
-    # print(benchmark_portvals)
-
-    # get stats
-    print_stats(benchmark_portvals, theoretical_portvals)
-
-    # plot graph
-    plotting_utility_function(benchmark_portvals, theoretical_portvals)
-
-
 if __name__ == "__main__":
-    report()
+    pass
+    #testPolicy(symbol = "JPM", sd=dt.datetime(2008, 1, 1), ed=dt.datetime(2009,12,31), sv = 100000)
+
