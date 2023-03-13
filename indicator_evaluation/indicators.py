@@ -19,6 +19,8 @@ Future versions of pandas will require you to explicitly register matplotlib con
 """
 pd.plotting.register_matplotlib_converters()
 
+def author():
+    return 'vsanjeev6'
 """
 Indicator 1: Exponential Moving Average
 """
@@ -67,15 +69,13 @@ def ema(sd, ed, symbol):
 
     # Add chart labels and legend
     plt.xlabel('Date')
-    plt.xticks(rotation=30)
-    plt.ylabel('Price')
+    plt.xticks(rotation=10)
+    plt.ylabel('Normalized Values')
     plt.title('EMA Crossover Trading Strategy')
     plt.grid()
     plt.legend()
-    plt.savefig("EMA.png")
+    plt.savefig("images/EMA.png")
     plt.clf()
-
-    return normalized_df_ema_20, normalized_df_ema_50
 
 """
 Indicator 2: Simple Moving Average and Price/SMA
@@ -97,25 +97,25 @@ def sma(sd, ed, symbol, prices_df,window):
     plt.plot(prices, label="JPM price (normalized)", color="blue")
     plt.plot(df_indicators['rolling mean'], label="SMA", color="red")
     plt.xlabel('Date')
-    plt.ylabel('Price (normalized)')
-    plt.title('SMA')
+    plt.ylabel('Normalized Values')
+    plt.title('Simple Moving Average Graph')
     plt.xticks(rotation=10)
     plt.grid()
     plt.legend()
-    plt.savefig("SMA.png")
+    plt.savefig("images/SMA.png")
     plt.clf()
 
     fig2 = plt.plot(figsize=(10, 5))
-    plt.plot(df_indicators['pricebySMA'], label="P/SMA", color="blue")
+    plt.plot(df_indicators['pricebySMA'], label="Price/SMA", color="blue")
     plt.xlabel('Date')
-    plt.ylabel('Price (normalized)')
-    plt.title('P/SMA')
+    plt.ylabel('Normalized Values')
+    plt.title('Trading Strategy based on Price/SMA ')
     plt.grid()
-    plt.legend()
     plt.xticks(rotation=10)
-    plt.axhline(y=1.1, linestyle='--', color="green")
-    plt.axhline(y=0.9, linestyle='--',color= "red")
-    plt.savefig("Price_By_SMA.png")
+    plt.axhline(y=1.1, linestyle='--', color="green", label='Bullish')
+    plt.axhline(y=0.9, linestyle='--',color= "red", label='Bearish')
+    plt.legend()
+    plt.savefig("images/Price_By_SMA.png")
     plt.clf()
 
 """
@@ -162,31 +162,28 @@ def bb(sd, ed, symbol, prices_df,window):
     plt.plot(df_indicators['upper band'], label="Upper Band", color="green")
     plt.plot(df_indicators['lower band'], label="Lower Band", color="purple")
 
-
     # Add BUY and SELL signals to the chart
     ax.plot(df_indicators[df_indicators['Position'] == 'BUY'].index, prices[df_indicators['Position'] == 'BUY'], '^', markersize=8, color='g', label='BUY')
     ax.plot(df_indicators[df_indicators['Position'] == 'SELL'].index, prices[df_indicators['Position'] == 'SELL'], 'v', markersize=8, color='r', label='SELL')
 
-    # Add chart labels and legend
     plt.xlabel('Date')
     plt.xticks(rotation=10)
-    plt.ylabel('Price (normalized)')
+    plt.ylabel('Normalized Values')
     plt.title('Bollinger Band Crossover Trading Strategy')
     plt.grid()
     plt.legend()
-    plt.savefig("Bollinger_Band.png")
+    plt.savefig("images/Bollinger_Band.png")
     plt.clf()
 
     fig2 = plt.figure(figsize=(10, 5))
-    plt.plot(df_indicators['bbp'], label="BB%", color="blue")
-    # Add chart labels and legend
+    plt.plot(df_indicators['bbp'], label="Bollinger Band Percent", color="blue")
     plt.xlabel('Date')
     plt.xticks(rotation=10)
-    plt.ylabel('Price (normalized)')
-    plt.title('Bollinger Band Percent')
+    plt.ylabel('Normalized Values')
+    plt.title('Bollinger Band Percent Graph')
     plt.grid()
     plt.legend()
-    plt.savefig("Bollinger_Band_Percent.png")
+    plt.savefig("images/Bollinger_Band_Percent.png")
     plt.clf()
 
 """
@@ -218,7 +215,7 @@ def cci(sd, ed, symbol, prices_df,window=20):
     prices_df['High'] = prices_df['High'] * prices_df['adjustment_factor']
     prices_df['Low'] = prices_df['Low'] * prices_df['adjustment_factor']
     prices_df = prices_df.ffill().bfill()
-    print("Final Prices\n", prices_df)
+    #print("Final Prices\n", prices_df)
 
     typical_price = (prices_df['High'] + prices_df['Low'] + prices_df['Adj Close']) / 3
     mean_deviation = abs(typical_price - typical_price.rolling(window).mean()).mean()
@@ -228,17 +225,19 @@ def cci(sd, ed, symbol, prices_df,window=20):
     fig = plt.plot(figsize=(10, 5))
     plt.plot(cci, label="CCI", color="blue")
     plt.xlabel('Date')
-    plt.ylabel('CCI')
-    plt.title('Commodity Channel Index')
+    plt.ylabel('CCI Values')
+    plt.title('Trading Strategy based on Commodity Channel Index')
     plt.grid()
-    plt.legend()
     plt.xticks(rotation=10)
-    plt.axhline(y=100, color='r', linestyle='-')
-    plt.axhline(y=-100, color='g', linestyle='-')
-    plt.savefig("CCI.png")
+    plt.axhline(y=100, color='r', linestyle='--', label='Bearish')
+    plt.axhline(y=-100, color='g', linestyle='--', label='Bullish')
+    plt.legend()
+    plt.savefig("images/CCI.png")
     plt.clf()
 
-
+"""
+Indicator 5:  Momentum
+"""
 def momentum(sd, ed, symbol, prices_df, window=20):
     prices = prices_df[symbol]
     prices = prices / prices[0]
@@ -253,35 +252,32 @@ def momentum(sd, ed, symbol, prices_df, window=20):
     plt.plot(df_indicators['Momentum'], label="Momentum", color="blue")
     plt.xlabel('Date')
     plt.xticks(rotation=10)
-    plt.ylabel('Price (normalized)')
-    plt.title('Momentum')
-    plt.axhline(y=0, color='grey', linestyle='-')
-    plt.axhline(y=0.05, color='green', linestyle='-')
-    plt.axhline(y=-0.05, color='red', linestyle='-')
+    plt.ylabel('Normalized Momentum Values')
+    plt.title('Trading Strategy based on Momentum')
+    plt.axhline(y=0, color='grey', linestyle='--')
+    plt.axhline(y=0.05, color='green', linestyle='--', label='BUY Signal')
+    plt.axhline(y=-0.05, color='red', linestyle='--', label='SELL Signal')
     plt.grid()
     plt.legend()
-    plt.savefig("Momentum.png")
+    plt.savefig("images/Momentum.png")
     plt.clf()
 
 
-def report():
-    sd = dt.datetime(2008, 1, 1)
-    ed = dt.datetime(2009, 12, 31)
-    symbol = 'JPM'
+def run(symbol="JPM", sd=dt.datetime(2008, 1, 1), ed=dt.datetime(2009, 12, 31)):
+    sd = sd
+    ed = ed
+    symbol = symbol
 
     dates = pd.date_range(sd, ed)
     prices_df = get_data([symbol], dates)
     prices_df = prices_df.ffill().bfill()
 
-    #df_ema = ema(sd, ed, symbol)
-    #sma(sd, ed, symbol, prices_df,window=20)
-    #bb(sd, ed, symbol, prices_df,window=20)
+    ema(sd, ed, symbol)
+    sma(sd, ed, symbol, prices_df,window=20)
+    bb(sd, ed, symbol, prices_df,window=20)
     cci(sd, ed, symbol, prices_df, window=20)
     momentum(sd, ed, symbol, prices_df, window=20)
 
-
-def author():
-    return 'vsanjeev6'
-
 if __name__ == "__main__":
-    report()
+    pass
+    #run()
