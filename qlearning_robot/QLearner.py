@@ -22,20 +22,21 @@ GT honor code violation.
   		  	   		  		 			  		 			     			  	 
 -----do not edit anything above this line---  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
-Student Name: Tucker Balch (replace with your name)  		  	   		  		 			  		 			     			  	 
-GT User ID: tb34 (replace with your User ID)  		  	   		  		 			  		 			     			  	 
-GT ID: 900897987 (replace with your GT ID)  		  	   		  		 			  		 			     			  	 
+Student Name: Vaishnavi Sanjeev  		  	   		  		 			  		 			     			  	 
+GT User ID: vsanjeev6  		  	   		  		 			  		 			     			  	 
+GT ID: 903797718 		  	   		  		 			  		 			     			  	 
 """  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
-import random as rand  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
-import numpy as np  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
-class QLearner(object):  		  	   		  		 			  		 			     			  	 
+import random as rand
+import numpy as np
+
+class QLearner(object):
+    def author(self):
+        return 'vsanjeev6'
+
     """  		  	   		  		 			  		 			     			  	 
     This is a Q learner object.  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
+
     :param num_states: The number of states to consider.  		  	   		  		 			  		 			     			  	 
     :type num_states: int  		  	   		  		 			  		 			     			  	 
     :param num_actions: The number of actions available..  		  	   		  		 			  		 			     			  	 
@@ -52,7 +53,8 @@ class QLearner(object):
     :type dyna: int  		  	   		  		 			  		 			     			  	 
     :param verbose: If “verbose” is True, your code can print out information for debugging.  		  	   		  		 			  		 			     			  	 
     :type verbose: bool  		  	   		  		 			  		 			     			  	 
-    """  		  	   		  		 			  		 			     			  	 
+    """
+
     def __init__(  		  	   		  		 			  		 			     			  	 
         self,  		  	   		  		 			  		 			     			  	 
         num_states=100,  		  	   		  		 			  		 			     			  	 
@@ -62,47 +64,128 @@ class QLearner(object):
         rar=0.5,  		  	   		  		 			  		 			     			  	 
         radr=0.99,  		  	   		  		 			  		 			     			  	 
         dyna=0,  		  	   		  		 			  		 			     			  	 
-        verbose=False,  		  	   		  		 			  		 			     			  	 
+        verbose=False,
     ):  		  	   		  		 			  		 			     			  	 
         """  		  	   		  		 			  		 			     			  	 
         Constructor method  		  	   		  		 			  		 			     			  	 
-        """  		  	   		  		 			  		 			     			  	 
-        self.verbose = verbose  		  	   		  		 			  		 			     			  	 
-        self.num_actions = num_actions  		  	   		  		 			  		 			     			  	 
-        self.s = 0  		  	   		  		 			  		 			     			  	 
-        self.a = 0  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
-    def querysetstate(self, s):  		  	   		  		 			  		 			     			  	 
-        """  		  	   		  		 			  		 			     			  	 
-        Update the state without updating the Q-table  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
-        :param s: The new state  		  	   		  		 			  		 			     			  	 
-        :type s: int  		  	   		  		 			  		 			     			  	 
-        :return: The selected action  		  	   		  		 			  		 			     			  	 
-        :rtype: int  		  	   		  		 			  		 			     			  	 
-        """  		  	   		  		 			  		 			     			  	 
-        self.s = s  		  	   		  		 			  		 			     			  	 
-        action = rand.randint(0, self.num_actions - 1)  		  	   		  		 			  		 			     			  	 
-        if self.verbose:  		  	   		  		 			  		 			     			  	 
-            print(f"s = {s}, a = {action}")  		  	   		  		 			  		 			     			  	 
-        return action  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
-    def query(self, s_prime, r):  		  	   		  		 			  		 			     			  	 
-        """  		  	   		  		 			  		 			     			  	 
-        Update the Q table and return an action  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
-        :param s_prime: The new state  		  	   		  		 			  		 			     			  	 
-        :type s_prime: int  		  	   		  		 			  		 			     			  	 
-        :param r: The immediate reward  		  	   		  		 			  		 			     			  	 
-        :type r: float  		  	   		  		 			  		 			     			  	 
-        :return: The selected action  		  	   		  		 			  		 			     			  	 
-        :rtype: int  		  	   		  		 			  		 			     			  	 
-        """  		  	   		  		 			  		 			     			  	 
-        action = rand.randint(0, self.num_actions - 1)  		  	   		  		 			  		 			     			  	 
-        if self.verbose:  		  	   		  		 			  		 			     			  	 
-            print(f"s = {s_prime}, a = {action}, r={r}")  		  	   		  		 			  		 			     			  	 
-        return action  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
-  		  	   		  		 			  		 			     			  	 
-if __name__ == "__main__":  		  	   		  		 			  		 			     			  	 
-    print("Remember Q from Star Trek? Well, this isn't him")  		  	   		  		 			  		 			     			  	 
+        """
+        self.verbose = verbose
+        self.num_actions = num_actions
+        self.s = 0
+        self.a = 0
+
+        self.num_state = num_states
+        self.alpha = alpha
+        self.gamma = gamma
+        self.rar = rar
+        self.radr = radr
+        self.dyna = dyna
+        # Initialize Q[] with all zeroes
+        self.q = np.zeros((num_states, num_actions))
+        self.T_prime = {}
+        self.states_and_actions = {}
+
+        if dyna > 0:
+            # Init Tc with a small value to avoid divide by 0
+            self.Tc = np.full((num_states, num_actions, num_states), 0.00001)
+            self.R = np.zeros((num_states, num_actions))
+
+    def querysetstate(self, s):
+        """
+        Update the state without updating the Q-table
+
+        :param s: The new state
+        :type s: int
+        :return: The selected action
+        :rtype: int
+        """
+        # Update the state
+        self.s = s
+
+        # Faster approach to generate random numbers than randint()
+        # randint() does a lot of case-checking and parameter setting
+        random = rand.random()
+
+        # Choose the next action randomly or from Q table
+        if random < self.rar:
+            action = rand.randint(0, self.num_actions - 1)
+        else:
+            action = np.argmax(self.q[s])
+        return action
+
+    def query(self, s_prime, r):
+        """
+        Update the Q table and return an action
+
+        :param s_prime: The new state
+        :type s_prime: int
+        :param r: The immediate reward
+        :type r: float
+        :return: The selected action
+        :rtype: int
+        """
+
+        # Update the Q table (2-D matrix)
+        self.q[self.s, self.a] = (1 - self.alpha) * self.q[self.s, self.a] + self.alpha * (r + self.gamma * np.max(self.q[s_prime]))
+
+        # Create a dictionary of historical states (keys) and corresponding actions (values)
+        self.states_and_actions.setdefault(self.s, []).append(self.a)
+
+        # Create a dictionary of (s,a): as keys and s_prime as values
+        self.T_prime = {}
+
+        # Dyna-Q
+        if self.dyna > 0:
+            # Learn models Tc and R
+            # Update of Tc and R is outside the Dyna loop
+            self.Tc[self.s, self.a, s_prime] += 1
+            self.R[self.s, self.a] = (1 - self.alpha) * self.R[self.s, self.a] + self.alpha * r
+
+            # Hallucinate experiences
+            for _ in range(self.dyna):
+                self.hallucinate()
+
+        # Faster approach to generate random numbers than randint()
+        # randint() does a lot of case-checking and parameter setting
+        random = rand.random()
+
+        if random < self.rar:
+            action = rand.randint(0, self.num_actions - 1)
+        else:
+            action = np.argmax(self.q[s_prime])
+
+        # Update random action rate
+        self.rar = self.rar * self.radr
+
+        if self.verbose:
+            print(f"s' = {s_prime}, a = {action}, r={r}")
+
+        # Update the new state and action
+        self.s = s_prime
+        self.a = action
+        return action
+
+    def hallucinate(self):
+        """
+        For Dyna-Q:
+        Hallucinate Experiences and Update the Q-table with <s,a,s',r>
+        """
+        # Randomly choose "s" and "a" from previously seen <s,a> pair
+        s = rand.choice(list(self.states_and_actions.keys()))
+        a = rand.choice(self.states_and_actions[s])
+
+        # Infer s_prime from T_prime[]
+        if (s, a) in self.T_prime:
+            s_prime = self.T_prime[(s, a)]
+        else:
+            s_prime = np.argmax(self.Tc[s, a])
+            self.T_prime[(s, a)] = s_prime
+
+        # Expected Reward
+        r = self.R[s, a]
+
+        # Update Q Table
+        self.q[s, a] = (1 - self.alpha) * self.q[s, a] + self.alpha * (r + self.gamma * np.max(self.q[s_prime]))
+
+if __name__ == "__main__":
+    print("Remember Q from Star Trek? Well, this isn't him")
