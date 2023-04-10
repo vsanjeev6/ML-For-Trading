@@ -31,7 +31,9 @@ import datetime as dt
 import random  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
 import pandas as pd  		  	   		  		 			  		 			     			  	 
-import util as ut  		  	   		  		 			  		 			     			  	 
+import util as ut
+import QLearner as ql
+import indicators as ind
   		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
 class StrategyLearner(object):  		  	   		  		 			  		 			     			  	 
@@ -53,7 +55,8 @@ class StrategyLearner(object):
         """  		  	   		  		 			  		 			     			  	 
         self.verbose = verbose  		  	   		  		 			  		 			     			  	 
         self.impact = impact  		  	   		  		 			  		 			     			  	 
-        self.commission = commission  		  	   		  		 			  		 			     			  	 
+        self.commission = commission
+        self.ql = ql.QLearner(num_states=1000, num_actions=3, alpha=0.2, gamma=0.9, rar=0.5, radr=0.99, dyna=0, verbose=False)
   		  	   		  		 			  		 			     			  	 
     # this method should create a QLearner, and train it for trading  		  	   		  		 			  		 			     			  	 
     def add_evidence(  		  	   		  		 			  		 			     			  	 
@@ -85,16 +88,60 @@ class StrategyLearner(object):
         prices = prices_all[syms]  # only portfolio symbols  		  	   		  		 			  		 			     			  	 
         prices_SPY = prices_all["SPY"]  # only SPY, for comparison later  		  	   		  		 			  		 			     			  	 
         if self.verbose:  		  	   		  		 			  		 			     			  	 
-            print(prices)  		  	   		  		 			  		 			     			  	 
+            print(prices)
+
+        bbp, CCI, ROC = ind.get_indicators(symbol, sd, ed)
+        bbp = discretize(bbp).rename({symbol:'BBP'}, axis=1)
+        CCI = discretize(CCI).rename({symbol:'CCI'}, axis=1)
+        ROC = discretize(ROC).rename({symbol:'ROC'}, axis=1)
+
+        indicators = pd.concat([bbp, CCI, ROC], axis=1)
+        indicators = indicators.loc[sd:]
+        indicators['state'] = indicators['BBP'].astype(str) + indicators['CCI'].astype(str) + \
+                              indicators['ROC'].astype(str)
+        initial_state = indicators.iloc[0]['state']
+
+        self.ql.querysetstate(int(float(initial_state)))
+
+        df_trades = pd.DataFrame(0, index=prices.index, columns=[symbol])
+
+        daily_price_change = get_daily_returns(prices)
+
+        df_trades_copy = df_trades.copy()
+        i = 0
+
+        while i < 100: #30 iteration limit
+            i += 1
+            holdings = 0
+
+            if i>5 and df_trades.equals(df_trades_copy):
+                # convergence
+                break
+
+            df_trades_copy = df_trades.copy()
+
+            for index in range(len(prices)):
+                reward = holdings * daily_price_change.loc[prices.index[index]] * (1 - self.impact)
+                a = self.ql.query(int(float(indicators.loc[prices.index[index]]['state'])), reward)
+                if (a == 1) and (holdings < 1000):
+                    #BUY
+                    if holdings == 0:
+                        df_trades.loc[prices.index[index]] = 1000
+                    elif holdings == -1000:
+                        df_trades.loc[prices.index[index]] = 2000
+                    holdings += df_trades.loc[prices.index[index]].values[0]
+
+                elif (a == 2) and (holdings > -1000):
+                    #SELL
+                    if holdings == 0:
+                        df_trades.loc[prices.index[index]] = -1000
+                    elif holdings == 1000:
+                        df_trades.loc[prices.index[index]] = -2000
+                    holdings += df_trades.loc[prices.index[index]].values[0]
+
+            # this method should use the existing policy and test it against new data
   		  	   		  		 			  		 			     			  	 
-        # example use with new colname  		  	   		  		 			  		 			     			  	 
-        volume_all = ut.get_data(  		  	   		  		 			  		 			     			  	 
-            syms, dates, colname="Volume"  		  	   		  		 			  		 			     			  	 
-        )  # automatically adds SPY  		  	   		  		 			  		 			     			  	 
-        volume = volume_all[syms]  # only portfolio symbols  		  	   		  		 			  		 			     			  	 
-        volume_SPY = volume_all["SPY"]  # only SPY, for comparison later  		  	   		  		 			  		 			     			  	 
-        if self.verbose:  		  	   		  		 			  		 			     			  	 
-            print(volume)  		  	   		  		 			  		 			     			  	 
+
   		  	   		  		 			  		 			     			  	 
     # this method should use the existing policy and test it against new data  		  	   		  		 			  		 			     			  	 
     def testPolicy(  		  	   		  		 			  		 			     			  	 
@@ -124,24 +171,85 @@ class StrategyLearner(object):
   		  	   		  		 			  		 			     			  	 
         # here we build a fake set of trades  		  	   		  		 			  		 			     			  	 
         # your code should return the same sort of data  		  	   		  		 			  		 			     			  	 
-        dates = pd.date_range(sd, ed)  		  	   		  		 			  		 			     			  	 
-        prices_all = ut.get_data([symbol], dates)  # automatically adds SPY  		  	   		  		 			  		 			     			  	 
-        trades = prices_all[[symbol,]]  # only portfolio symbols  		  	   		  		 			  		 			     			  	 
-        trades_SPY = prices_all["SPY"]  # only SPY, for comparison later  		  	   		  		 			  		 			     			  	 
-        trades.values[:, :] = 0  # set them all to nothing  		  	   		  		 			  		 			     			  	 
-        trades.values[0, :] = 1000  # add a BUY at the start  		  	   		  		 			  		 			     			  	 
-        trades.values[40, :] = -1000  # add a SELL  		  	   		  		 			  		 			     			  	 
-        trades.values[41, :] = 1000  # add a BUY  		  	   		  		 			  		 			     			  	 
-        trades.values[60, :] = -2000  # go short from long  		  	   		  		 			  		 			     			  	 
-        trades.values[61, :] = 2000  # go long from short  		  	   		  		 			  		 			     			  	 
-        trades.values[-1, :] = -1000  # exit on the last day  		  	   		  		 			  		 			     			  	 
-        if self.verbose:  		  	   		  		 			  		 			     			  	 
-            print(type(trades))  # it better be a DataFrame!  		  	   		  		 			  		 			     			  	 
-        if self.verbose:  		  	   		  		 			  		 			     			  	 
-            print(trades)  		  	   		  		 			  		 			     			  	 
-        if self.verbose:  		  	   		  		 			  		 			     			  	 
-            print(prices_all)  		  	   		  		 			  		 			     			  	 
-        return trades  		  	   		  		 			  		 			     			  	 
+        syms = [symbol]
+        dates = pd.date_range(sd, ed)
+        prices_all = ut.get_data(syms, dates)  # automatically adds SPY
+        prices = prices_all[syms]  # only portfolio symbols
+        prices_SPY = prices_all["SPY"]  # only SPY, for comparison later
+
+        bbp, CCI, ROC = ind.get_indicators(symbol, sd, ed)
+
+        bbp = discretize(bbp).rename({symbol: 'BBP'}, axis=1)
+        CCI = discretize(CCI).rename({symbol: 'CCI'}, axis=1)
+        ROC = discretize(ROC).rename({symbol: 'ROC'}, axis=1)
+
+        indicators = pd.concat([bbp, CCI, ROC], axis=1)
+        indicators = indicators.loc[sd:]
+        indicators['state'] = indicators['BBP'].astype(str) + indicators['CCI'].astype(str) + \
+                              indicators['ROC'].astype(str)
+        initial_state = indicators.iloc[0]['state']
+
+
+        self.ql.querysetstate(int(float(initial_state)))
+
+        df_trades = pd.DataFrame(0, index=prices.index, columns=[symbol])
+
+        holdings = 0
+
+        for index in range(len(prices)):
+            a = self.ql.querysetstate(int(float(indicators.loc[prices.index[index]]['state'])))
+            if (a == 1) and (holdings < 1000):
+                # BUY
+                if holdings == 0:
+                    df_trades.loc[prices.index[index]] = 1000
+                elif holdings == -1000:
+                    df_trades.loc[prices.index[index]] = 2000
+                holdings += df_trades.loc[prices.index[index]].values[0]
+
+            elif (a == 2) and (holdings > -1000):
+                # SELL
+                if holdings == 0:
+                    df_trades.loc[prices.index[index]] = -1000
+                elif holdings == 1000:
+                    df_trades.loc[prices.index[index]] = -2000
+                holdings += df_trades.loc[prices.index[index]].values[0]
+        return df_trades
+
+    def get_daily_returns(port_val):
+        daily_returns = port_val.copy()
+        daily_returns[1:] = (port_val[1:] / port_val[:-1].values) - 1
+        return daily_returns
+
+    def discretize(data, steps=10):
+        stepsize = round(len(data) / steps)
+        data1 = data.sort_values()
+        treshold = np.zeros(steps - 1)
+        for i in range(steps - 1):
+            treshold[i] = data1.iloc[(i + 1) * stepsize]
+
+        for i in range(len(data)):
+            if data.iloc[i] <= treshold[0]:
+                data.iloc[i] = 0
+            elif treshold[0] < data.iloc[i] <= treshold[1]:
+                data.iloc[i] = 1
+            elif treshold[1] < data.iloc[i] <= treshold[2]:
+                data.iloc[i] = 2
+            elif treshold[2] < data.iloc[i] <= treshold[3]:
+                data.iloc[i] = 3
+            elif treshold[3] < data.iloc[i] <= treshold[4]:
+                data.iloc[i] = 4
+            elif treshold[4] < data.iloc[i] <= treshold[5]:
+                data.iloc[i] = 5
+            elif treshold[5] < data.iloc[i] <= treshold[6]:
+                data.iloc[i] = 6
+            elif treshold[6] < data.iloc[i] <= treshold[7]:
+                data.iloc[i] = 7
+            elif treshold[7] < data.iloc[i] <= treshold[8]:
+                data.iloc[i] = 8
+            else:
+                data.iloc[i] = 9
+
+        return (data.astype(int)).to_frame()
   		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
 if __name__ == "__main__":  		  	   		  		 			  		 			     			  	 
