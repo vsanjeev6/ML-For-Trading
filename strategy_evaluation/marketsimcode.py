@@ -1,68 +1,63 @@
-"""
-Student Name: Vaishnavi Sanjeev
-GT User ID: vsanjeev6
-GT ID: 903797718
-"""
-
 import pandas as pd
 import numpy as np
-import datetime as dt
-from util import get_data, plot_data
+from util import get_data
 
 def author():
-    return 'vsanjeev6'
+  return 'pcometti3' # replace tb34 with your Georgia Tech username.
 
-def compute_portvals(orders_df, start_val = 1000000, commission=9.95, impact=0.005):
-    print("Strategy Evaluation:: Market Sim Code")
-    orders_dates = orders_df.index
-    start_date = orders_df.index[0]
-    end_date = orders_df.index[-1]
+def compute_portvals(orders, start_val=100000):
+    """
+    Compute the value of the portfolio for the given orders.
 
-    portvals = get_data(['SPY'], pd.date_range(start_date, end_date), addSPY=True, colname = 'Adj Close')
-    portvals = portvals.rename(columns={'SPY': 'value'})
-    dates = portvals.index
+    Parameters
+    ----------
+    orders : pandas.DataFrame
+        A single column data frame, indexed by date, whose values represent
+        trades for each trading day.
+    start_val : int, optional
+        the start value of the portfolio. The default is 100000.
 
-    symbol = orders_df.columns[0]
-    current_cash = start_val
-    shares_owned = {}
-    symbol_table = {}
-    #print(orders_df)
+    Returns
+    -------
+    df_portvals : pandas.DataFrame
+        A single-column dataframe, indexed by date, whose values represent
+        the portfolio value for each trading day.
 
-    for date in dates:
-        trade = orders_df.loc[date].loc[symbol]
-        if trade != 0:
-            if trade < 0:
-                order = 'SELL'
-                shares = abs(trade)
-            else:
-                order = 'BUY'
-                shares = trade
+    """
+    symbol = orders.columns[0]
 
-            if symbol not in symbol_table:
-                symbol_df = get_data([symbol], pd.date_range(date, end_date), addSPY=True, colname='Adj Close')
-                symbol_df = symbol_df.ffill().bfill()
-                symbol_table[symbol] = symbol_df
+    # Create the prices dataframe
+    df_prices = get_data([symbol], orders.index)
+    
+    # Remove the SPY column
+    df_prices = df_prices.drop('SPY', axis=1)
+    
+    # Fill the Cash column with ones
+    df_prices['Cash'] = np.ones(len(df_prices))
 
-            if order == 'BUY':
-                share_change = shares
-                cash_change = -symbol_table[symbol].loc[date].loc[symbol] * (1 + impact) * shares
-            elif order == 'SELL':
-                share_change = -shares
-                cash_change = symbol_table[symbol].loc[date].loc[symbol] * (1 - impact) * shares
+    # Init the trades & holdings DFs
+    df_trades = orders.copy()
+    df_trades['Cash'] = - orders[symbol] * df_prices[symbol]
 
-            shares_owned[symbol] = shares_owned.get(symbol, 0) + share_change
-            current_cash += cash_change - commission
+    # Init the cash value of holdings to the start value
+    df_holdings = df_trades.copy()
+    df_holdings[symbol] = np.zeros(len(df_holdings))
+    df_holdings['Cash'] = np.ones(len(df_prices)) * start_val
 
-        # Current Portfolio Value
-        portvals.loc[date].loc['value'] = compute_daily_portval(date, current_cash, shares_owned, symbol_table)
-    return portvals
+    # Loop over the trades to get the full holdings
+    inds = list(df_holdings.index)
+    for k, idx in enumerate(inds):
+        df_holdings.loc[idx] = df_holdings.loc[inds[k-1]] + df_trades.loc[idx]
 
-# Computing portfolio value for a day
-def compute_daily_portval(curr_date, current_cash, shares_owned, symbol_table):
-    shares_worth = 0
-    for symbol in shares_owned:
-        shares_worth += symbol_table[symbol].loc[curr_date].loc[symbol] * shares_owned[symbol]
-    return current_cash + shares_worth
+    # Compute the value of each stock
+    df_value = df_holdings.copy()
+    df_value *= df_prices
+
+    # Compute the value of the full portfolio
+    df_portvals = pd.DataFrame(df_value.sum(axis=1), columns=['Cash'])
+
+    return df_portvals
+
 
 if __name__ == "__main__":
-    pass
+    print("Check testproject.py")
