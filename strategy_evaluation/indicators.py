@@ -1,71 +1,57 @@
 """
-Code implementing your indicators as functions that operate on DataFrames. There is no defined API for indicators.py, but
-when it runs, the main method should generate the charts that will illustrate your indicators in the report.
-"""
+Implementing Technical Indicators
+	1. Volatility
+	2. Bollinger Bands
+	3. Simple Moving Average
 
+@Name : Nidhi Nirmal Menon
+@UserID : nmenon34
+
+"""
+import pandas as pd
 import numpy as np
 import datetime as dt
-import pandas as pd
-from util import get_data
+from datetime import datetime
+import os
+from util import get_data, plot_data
 import matplotlib.pyplot as plt
+import math
 
-def author():
-  return 'pcometti3'
+def author(self):
+    """
+    @summary Returning the author user ID
+    """
+    return 'nmenon34'
 
-
-def get_bbp(rate, prices):
-  SMA = prices.rolling(rate).mean()
-  std = prices.rolling(rate).std()
-  bollinger_up = SMA + std * 2  # Calculate top band
-  bollinger_down = SMA - std * 2  # Calculate bottom band
-  bbp = (prices - bollinger_down) / (bollinger_up - bollinger_down)
-  return bbp
-
-
-def get_CCI(symbol, sd, ed, rate, prices):
-  dates = pd.date_range(sd, ed)
-  high = get_data([symbol], dates, colname="High")[symbol]
-  low = get_data([symbol], dates, colname="Low")[symbol]
-  close = prices
-  TP = (high + low + close) / 3
-  SMA = TP.rolling(rate).mean()
-  MD = TP.rolling(rate).apply(lambda x: pd.Series(x).mad(), raw=False)
-  CCI = (TP - SMA) / (0.015 * MD)
-  return CCI
-
-"""
-Indicator 5:  Momentum
-"""
-def get_momentum(prices_df, window=20):
-    momentum = (prices_df / prices_df.shift(window)) - 1
-    return momentum
+# Calculating the Simple Moving Average
+def getSMA(prices,lookback, symbols):
+	price = prices[symbols]
+	sma = price.rolling(window=lookback, center=False).mean()
+	return sma
 
 
-def get_ROC(prices, rate):
-  SMA = prices.rolling(rate).mean()
-  close = prices
-  ROC = ((close - close.shift(periods=rate-1))/close.shift(periods=rate-1))*100
-  return ROC
+def getBollinger(prices, symbols, lookback, sma):
+	price = prices[symbols]
+	bollinger = price.copy()
+	avg = price.rolling(window=lookback, center=False).mean()
+	std = price.rolling(window=lookback, center=False).std()
+	bollinger = (price - avg)/(2*std)
+	return bollinger
 
-def get_indicators(symbol="JPM", sd = dt.datetime(2008, 1, 1), ed = dt.datetime(2009, 12, 31)):
-  sd1 = sd-dt.timedelta(days=40)
-  dates = pd.date_range(sd1, ed)
-  prices_all = get_data([symbol], dates)
-  prices = prices_all[symbol]
-  prices /= prices[0]
 
-  rate = len(prices.loc[sd1:sd+dt.timedelta(days=1)])
+def getVolatility(prices, lookback, symbols):
+	price = prices[symbols]
+	volatility = price.rolling(window=lookback, center=False).std()
+	return volatility
 
-  # %B
-  bbp = get_bbp(rate, prices).loc[sd:]
 
-  # CCI
-  CCI = get_CCI(symbol, sd1, ed, rate, prices).loc[sd:]
+# Calculating Price/SMA
+def priceBySMA(prices, lookback, sma, symbols):
+	for day in range(lookback,prices.shape[0]):
+		for sym in symbols:
+			sma.ix[day,sym]=prices.ix[day,sym]/sma.ix[day,sym]
+	return sma
 
-  #ROC
-  ROC = get_ROC(prices, rate).loc[sd:]
 
-  return bbp, CCI, ROC
 
-if __name__ == "__main__":
-    get_indicators()
+

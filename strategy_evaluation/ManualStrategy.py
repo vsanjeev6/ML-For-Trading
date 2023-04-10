@@ -1,166 +1,140 @@
 """
-Code implementing a ManualStrategy object
+Implementing Manual Rule Based Strategy using all the indicators from indicators.py
+
+@Name : Nidhi Nirmal Menon
+@UserID : nmenon34
+
 """
 
-import datetime as dt
+
 import pandas as pd
-from util import get_data
-import marketsimcode as ms
+import numpy as np
+import datetime as dt
+from util import get_data, plot_data
+from marketsimcode import compute_portvals
+from indicators import *
 import matplotlib.pyplot as plt
-import indicators as ind
+
+def author(self):
+    """
+    @summary Returning the author user ID
+    """
+    return 'nmenon34'
+
+def testPolicy(symbol,sd,ed,sv):
+	dates = pd.date_range(sd, ed)
+	prices_all = get_data(symbol, dates)
+	prices = prices_all[symbol]
+	flag = 0 # flag=1: have shares, flag=0 no shares, flag=-1 shorted
+	lookback=20
+	sym='JPM'
+	sma = getSMA(prices,lookback,symbol)
+	bollinger = getBollinger(prices,symbol,lookback,sma)
+	psma = priceBySMA(prices, lookback, sma, symbol)
+	volatility = getVolatility(prices,lookback,symbol)
+	trades = pd.DataFrame(columns=['Date', 'Symbol', 'Order', 'Shares'])
+	index=0
+	buydate =[]
+	selldate=[]
+
+	for i in range(0, prices.shape[0]- 1):
+		if flag == 0:
+			if bollinger.ix[i,sym] < 0.2 or psma.ix[i,sym] < 0.6 or volatility.ix[i,sym] < -0.1:
+				trades.loc[index] = [prices.index[i].strftime('%Y-%m-%d'),'JPM','BUY',1000]
+				flag = 1
+				index +=1
+				buydate.append(prices.index[i].date())
+			elif bollinger.ix[i,sym] > 0.8 or psma.ix[i,sym] > 1.1 or volatility.ix[i,sym] > 0.1:
+				trades.loc[index] = [prices.index[i].strftime('%Y-%m-%d'),'JPM','SELL',1000]
+				flag=-1
+				index+=1
+				selldate.append(prices.index[i].date())
+		elif flag == -1:
+			if bollinger.ix[i,sym] < 0.1 or psma.ix[i,sym] < 0.65 or volatility.ix[i,sym] < -0.2:
+				trades.loc[index] = [prices.index[i].strftime('%Y-%m-%d'),'JPM','BUY',2000]
+				flag = 1
+				index +=1
+				buydate.append(prices.index[i].date())
+			elif bollinger.ix[i,sym] < 0.2 or psma.ix[i,sym] < 0.6 or volatility.ix[i,sym] < -0.1:
+				trades.loc[index] = [prices.index[i].strftime('%Y-%m-%d'),'JPM','BUY',1000]
+				flag = 0
+				index +=1
+		elif flag == 1:
+				if bollinger.ix[i,sym] > 0.9 or psma.ix[i,sym] > 1.5 or volatility.ix[i,sym] > 0.2:
+					trades.loc[index] = [prices.index[i].strftime('%Y-%m-%d'),'JPM','SELL',2000]
+					flag = -1
+					index +=1
+					selldate.append(prices.index[i].date())
+				elif bollinger.ix[i,sym] > 0.8 or psma.ix[i,sym] > 1.1 or volatility.ix[i,sym]>0.1:
+					trades.loc[index] = [prices.index[i].strftime('%Y-%m-%d'),'JPM','SELL',1000]
+					flag = 0
+					index +=1
+
+	if flag==1:
+		trades.loc[index] = [prices.index[i].strftime('%Y-%m-%d'),'JPM','SELL',1000]
+	if flag == -1:
+		trades.loc[index] = [prices.index[i].strftime('%Y-%m-%d'),'JPM','BUY',1000]
 
 
-def author():
-  return 'pcometti3' # replace tb34 with your Georgia Tech username.
+	return trades, buydate, selldate
 
-def testPolicy(symbol="JPM", sd=dt.datetime(2008, 1, 1), ed=dt.datetime(2009,12,31), sv = 100000):
-
-  dates = pd.date_range(sd, ed)
-  prices_all = get_data([symbol], dates)
-  prices = prices_all[symbol]
-  rate = 20
-
-  df_trades = pd.DataFrame(0, index=prices.index, columns=[symbol])
-
-  BBP = ind.get_bbp(rate, prices)
-  print(BBP)
-  CCI = ind.get_CCI(symbol, sd, ed, rate, prices)
-  print(CCI)
-  ROC = ind.get_ROC(prices, rate)
-  print(ROC)
-  momentum = ind.get_momentum(prices,rate)
-  print(momentum)
-
-  holding = 0
-  delta = 1000
-  short = []
-  long = []
-
-  for i in range(len(prices)):
-    if ((BBP[i] >= 0.75 and CCI[i] >= 100) or momentum[i] >= 0.05) and holding >= 0:
-      #sell
-      if holding==0:
-        df_trades.loc[prices.index[i]] = -delta
-      elif holding==1000:
-        df_trades.loc[prices.index[i]] = -delta*2
-      short.append(prices.index[i])
-      holding += df_trades.loc[prices.index[i]].values[0]
-
-    elif ((BBP[i] <= 0.25 and CCI[i] <= -100) or momentum[i] <= -0.05) and holding <= 0:
-      #buy
-      if holding==0:
-        df_trades.loc[prices.index[i]] = delta
-      elif holding==-1000:
-        df_trades.loc[prices.index[i]] = delta*2
-      long.append(prices.index[i])
-      holding += df_trades.loc[prices.index[i]].values[0]
-
-
-  return df_trades, short, long
-
-
-def test_code(symbol="JPM", sv = 100000):
-  sd = dt.datetime(2008, 1, 1)
-  ed = dt.datetime(2009, 12, 31)
-  df_trades, short, long = testPolicy(symbol, sd, ed, sv)
-  df_benchmark = pd.DataFrame(0, index=df_trades.index, columns=[symbol])
-  df_benchmark.loc[df_benchmark.index[0]] = 1000
-  df_benchmark.loc[df_benchmark.index[len(df_benchmark.index)-1]] = -1000
-
-  portvals = ms.compute_portvals(df_trades, sv)
-  print(portvals)
-  benchmark = ms.compute_portvals(df_benchmark, sv)
-  print(benchmark)
-
-  portvals /= portvals.values[0]
-  benchmark /= benchmark.values[0]
-
-  compute_stats(portvals, benchmark, title="IN-SAMPLE")
-
-  ymin=min([portvals.min().values[0], benchmark.min().values[0]])
-  ymax=max([portvals.max().values[0], benchmark.max().values[0]])
-
-  pd.plotting.register_matplotlib_converters()
-  plt.title('Manual Strategy vs. JPM Benchmark for in-sample period')
-  plt.xticks(rotation=45)
-  plt.plot(portvals, label="Manual Strategy", color="red")
-  plt.plot(benchmark, label="JPM Benchmark", color="purple")
-  plt.vlines(x=short, ymin=ymin, ymax=ymax, color='black', linewidth=1, label='short entry')
-  plt.vlines(x=long, ymin=ymin, ymax=ymax, color='b', linewidth=1, label='long entry')
-  plt.grid()
-  plt.legend()
-  plt.savefig("images/ManualStrategy1", dpi=300, bbox_inches='tight')
-  plt.clf()
-
-  sd = dt.datetime(2010, 1, 1)
-  ed = dt.datetime(2011, 12, 31)
-  df_trades, short, long = testPolicy(symbol, sd, ed, sv)
-  df_benchmark = pd.DataFrame(0, index=df_trades.index, columns=[symbol])
-  df_benchmark.loc[df_benchmark.index[0]] = 1000
-  df_benchmark.loc[df_benchmark.index[len(df_benchmark.index) - 1]] = -1000
-
-  portvals = ms.compute_portvals(df_trades, sv)
-  benchmark = ms.compute_portvals(df_benchmark, sv)
-
-  portvals /= portvals.values[0]
-  benchmark /= benchmark.values[0]
-
-  compute_stats(portvals, benchmark, title="OUT-SAMPLE")
-
-  ymin = min([portvals.min().values[0], benchmark.min().values[0]])
-  ymax = max([portvals.max().values[0], benchmark.max().values[0]])
-
-  pd.plotting.register_matplotlib_converters()
-  plt.title('Manual Strategy vs. JPM Benchmark for out-samples period')
-  plt.xticks(rotation=45)
-  plt.plot(portvals, label="Manual Strategy", color="red")
-  plt.plot(benchmark, label="JPM Benchmark", color="purple")
-  plt.vlines(x=short, ymin=ymin, ymax=ymax, color='black', linewidth=1, label='short entry')
-  plt.vlines(x=long, ymin=ymin, ymax=ymax, color='b', linewidth=1, label='long entry')
-  plt.grid()
-  plt.legend()
-  plt.savefig("images/ManualStrategy2", dpi=300, bbox_inches='tight')
-  plt.clf()
-
-def compute_stats(portvals, benchmark, title):
-  d_returns1 = portvals.copy()
-  for i in range(1, len(d_returns1)):
-    d_returns1.loc[d_returns1.index[i]] = (portvals.values[i - 1][0] - portvals.values[i][0]) / portvals.values[i - 1][0]
-  d_returns1 = d_returns1[1:]
-
-  # Below are desired output values
-
-  # Cumulative return (final - initial) - 1
-  cum_ret1 = (portvals.values[-1][0] / portvals.values[0][0]) - 1
-  # Average daily return
-  avg_daily_ret1 = d_returns1.mean()
-  # Standard deviation of daily return
-  std_daily_ret1 = d_returns1.std()
-
-  d_returns2 = benchmark.copy()
-  for i in range(1, len(d_returns2)):
-    d_returns2.loc[d_returns2.index[i]] = (benchmark.values[i - 1][0] - benchmark.values[i][0]) / benchmark.values[i - 1][0]
-  d_returns2 = d_returns2[1:]
-
-  # Cumulative return (final - initial) - 1
-  cum_ret2 = (benchmark.values[-1][0] / benchmark.values[0][0]) - 1
-  # Average daily return
-  avg_daily_ret2 = d_returns2.mean()
-  # Standard deviation of daily return
-  std_daily_ret2 = d_returns2.std()
-
-  print(title)
-  print()
-  print("Cumulative Return of Portfolio: %.6f" % cum_ret1)
-  print("Cumulative Return of Benchmark: %.6f" % cum_ret2)
-  print()
-  print("Standard Deviation of Portfolio: %.6f" % std_daily_ret1)
-  print("Standard Deviation of Benchmark: %.6f" % std_daily_ret2)
-  print()
-  print("Average Daily Return of Portfolio: %.6f" % -avg_daily_ret1)
-  print("Average Daily Return of Benchmark: %.6f" % -avg_daily_ret2)
-  print()
 
 if __name__ == "__main__":
-  #print("Manual Strategy")
-  test_code(symbol="JPM", sv=100000)
+	sd = dt.datetime(2010,1,1)
+	ed = dt.datetime(2011, 12, 31)
+	symbol = ['JPM']
+	dates = dates = pd.date_range(sd, ed)
+	trades,buydate,selldate = testPolicy(symbol=['JPM'], sd=sd ,ed=ed, sv=100000)
+	prices_all = get_data(symbol, dates)
+
+
+	bench = pd.DataFrame(columns=['Date', 'Symbol', 'Order', 'Shares'])
+	bench.loc[0] = [prices_all.index[0].strftime('%Y-%m-%d'),'JPM','BUY',1000]
+	bench.loc[1] = [prices_all.index[-1].strftime('%Y-%m-%d'),'JPM','SELL',1000]
+
+	# Manual Strategy
+	ms_port_val = compute_portvals(trades,100000,9.95,0.005)
+
+	# Benchmark
+	bench_port_val = compute_portvals(bench,100000,9.95,0.005)
+
+	# Printing Portfolio statistics
+	daily_returns = (ms_port_val / ms_port_val.shift(1)) - 1
+	daily_returns = daily_returns[1:]
+	cr = (ms_port_val.iloc[-1] / ms_port_val.iloc[0]) - 1
+	adr = daily_returns.mean()
+	sddr = daily_returns.std()
+	"""
+	print "Manual Strategy Stats"
+	print "CR " + str(cr)
+	print "Avg of daily returns " + str(adr)
+	print "Std deviation of daily returns " + str(sddr)
+	"""
+
+	# Printing Benchmark statistics
+	bench_dr = (bench_port_val / bench_port_val.shift(1)) - 1
+	bench_dr = bench_dr[1:]
+	cr = (bench_port_val.iloc[-1] / bench_port_val.iloc[0]) - 1
+	adr = bench_dr.mean()
+	sddr = bench_dr.std()
+
+	"""
+	print "\nBenchmark Stats"
+	print "CR " + str(cr)
+	print "Avg of daily returns " + str(adr)
+	print "Std deviation of daily returns " + str(sddr)
+	"""
+	# Plotting charts
+	ms_port_val = ms_port_val / ms_port_val[0]
+	bench_port_val = bench_port_val / bench_port_val[0]
+	ax = ms_port_val.plot(fontsize=12, color="black", label="Manual Strategy")
+	bench_port_val.plot(ax=ax, color="blue", label='Benchmark')
+	for date in buydate:
+		ax.axvline(date,color="green")
+	for date in selldate:
+		ax.axvline(date,color="red")
+	plt.title(" Manual Strategy - out sample ")
+	ax.set_xlabel("Date")
+	ax.set_ylabel("Portfolio Value")
+	plt.legend()
+	plt.show()
