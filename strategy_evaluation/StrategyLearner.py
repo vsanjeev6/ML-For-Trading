@@ -1,7 +1,4 @@
 """"""
-
-import numpy as np
-
 """  		  	   		  		 			  		 			     			  	 
 Template for implementing StrategyLearner  (c) 2016 Tucker Balch  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
@@ -37,6 +34,7 @@ import pandas as pd
 import util as ut
 import QLearner as ql
 import indicators as ind
+import numpy as np
 
 
 class StrategyLearner(object):
@@ -61,7 +59,7 @@ class StrategyLearner(object):
         self.verbose = verbose
         self.impact = impact
         self.commission = commission
-        self.ql = ql.QLearner(num_states=1000, num_actions=3, alpha=0.2, gamma=0.9, rar=0.5, radr=0.99, dyna=0, verbose=False)
+        self.ql = ql.QLearner(num_states=1000, num_actions=3, alpha=0.2, gamma=0.9, rar=0.9, radr=0.99, dyna=0, verbose=False)
 
         # this method should create a QLearner, and train it for trading
 

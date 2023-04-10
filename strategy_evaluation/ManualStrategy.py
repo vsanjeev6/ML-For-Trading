@@ -1,69 +1,78 @@
 """
-Code implementing a ManualStrategy object
+Code implementing the ManualStrategy object
 """
 
 import datetime as dt
 import pandas as pd
 from util import get_data
-import marketsimcode as ms
+import marketsimcode as mktsim
 import matplotlib.pyplot as plt
 import indicators as ind
 
+"""
+Register datetime converter
+To avoid warings: 
+FutureWarning: Using an implicitly registered datetime converter for a matplotlib plotting method. 
+The converter was registered by pandas on import.
+Future versions of pandas will require you to explicitly register matplotlib converters.
+"""
+pd.plotting.register_matplotlib_converters()
 
 def author():
-  return 'pcometti3' # replace tb34 with your Georgia Tech username.
+  return 'vsanjeev6'
 
-def testPolicy(symbol="JPM", sd=dt.datetime(2008, 1, 1), ed=dt.datetime(2009,12,31), sv = 100000):
+class ManualStrategy:
+  def testPolicy(self, symbol="JPM", sd=dt.datetime(2008, 1, 1), ed=dt.datetime(2009,12,31), sv = 100000):
+    dates = pd.date_range(sd, ed)
+    prices_all = get_data([symbol], dates)
+    prices = prices_all[symbol]
+    lookback = 20
 
-  dates = pd.date_range(sd, ed)
-  prices_all = get_data([symbol], dates)
-  prices = prices_all[symbol]
-  rate = 20
+    df_trades = pd.DataFrame(0, index=prices.index, columns=[symbol])
 
-  df_trades = pd.DataFrame(0, index=prices.index, columns=[symbol])
+    BBP = ind.get_bbp(lookback, prices)
+    CCI = ind.get_CCI(symbol, sd, ed, lookback, prices)
+    ROC = ind.get_ROC(prices, lookback)
 
-  BBP = ind.get_bbp(rate, prices)
-  CCI = ind.get_CCI(symbol, sd, ed, rate, prices)
-  ROC = ind.get_ROC(prices, rate)
+    holding = 0
+    delta = 1000
+    short = []
+    long = []
 
-  holding = 0
-  delta = 1000
-  short = []
-  long = []
+    for i in range(len(prices)):
+      if ((BBP[i] >= 0.75 and CCI[i] >= 100) or ROC[i] >= 25) and holding >= 0:
+        #sell
+        if holding==0:
+          df_trades.loc[prices.index[i]] = -delta
+        elif holding==1000:
+          df_trades.loc[prices.index[i]] = -delta*2
+        short.append(prices.index[i])
+        holding += df_trades.loc[prices.index[i]].values[0]
 
-  for i in range(len(prices)):
-    if ((BBP[i] >= 0.75 and CCI[i] >= 100) or ROC[i] >= 25) and holding >= 0:
-      #sell
-      if holding==0:
-        df_trades.loc[prices.index[i]] = -delta
-      elif holding==1000:
-        df_trades.loc[prices.index[i]] = -delta*2
-      short.append(prices.index[i])
-      holding += df_trades.loc[prices.index[i]].values[0]
-
-    elif ((BBP[i] <= 0.25 and CCI[i] <= -100) or ROC[i] <= -25) and holding <= 0:
-      #buy
-      if holding==0:
-        df_trades.loc[prices.index[i]] = delta
-      elif holding==-1000:
-        df_trades.loc[prices.index[i]] = delta*2
-      long.append(prices.index[i])
-      holding += df_trades.loc[prices.index[i]].values[0]
+      elif ((BBP[i] <= 0.25 and CCI[i] <= -100) or ROC[i] <= -25) and holding <= 0:
+        #buy
+        if holding==0:
+          df_trades.loc[prices.index[i]] = delta
+        elif holding==-1000:
+          df_trades.loc[prices.index[i]] = delta*2
+        long.append(prices.index[i])
+        holding += df_trades.loc[prices.index[i]].values[0]
 
 
-  return df_trades, short, long
+    return df_trades, short, long
 
 
 def test_code(symbol="JPM", sv = 100000):
   sd = dt.datetime(2008, 1, 1)
   ed = dt.datetime(2009, 12, 31)
-  df_trades, short, long = testPolicy(symbol, sd, ed, sv)
+  ms = ManualStrategy()
+  df_trades, short, long = ms.testPolicy(symbol, sd, ed, sv)
   df_benchmark = pd.DataFrame(0, index=df_trades.index, columns=[symbol])
   df_benchmark.loc[df_benchmark.index[0]] = 1000
   df_benchmark.loc[df_benchmark.index[len(df_benchmark.index)-1]] = -1000
 
-  portvals = ms.compute_portvals(df_trades, sv)
-  benchmark = ms.compute_portvals(df_benchmark, sv)
+  portvals = mktsim.compute_portvals(df_trades, sv,commission=9.95, impact=0.005)
+  benchmark = mktsim.compute_portvals(df_benchmark, sv, commission=9.95, impact=0.005)
 
   portvals /= portvals.values[0]
   benchmark /= benchmark.values[0]
@@ -73,7 +82,6 @@ def test_code(symbol="JPM", sv = 100000):
   ymin=min([portvals.min().values[0], benchmark.min().values[0]])
   ymax=max([portvals.max().values[0], benchmark.max().values[0]])
 
-  pd.plotting.register_matplotlib_converters()
   plt.title('Manual Strategy vs. JPM Benchmark for in-sample period')
   plt.xticks(rotation=45)
   plt.plot(portvals, label="Manual Strategy", color="red")
@@ -87,13 +95,13 @@ def test_code(symbol="JPM", sv = 100000):
 
   sd = dt.datetime(2010, 1, 1)
   ed = dt.datetime(2011, 12, 31)
-  df_trades, short, long = testPolicy(symbol, sd, ed, sv)
+  df_trades, short, long = ms.testPolicy(symbol, sd, ed, sv)
   df_benchmark = pd.DataFrame(0, index=df_trades.index, columns=[symbol])
   df_benchmark.loc[df_benchmark.index[0]] = 1000
   df_benchmark.loc[df_benchmark.index[len(df_benchmark.index) - 1]] = -1000
 
-  portvals = ms.compute_portvals(df_trades, sv)
-  benchmark = ms.compute_portvals(df_benchmark, sv)
+  portvals = mktsim.compute_portvals(df_trades, sv,commission=9.95, impact=0.005)
+  benchmark = mktsim.compute_portvals(df_benchmark, sv,commission=9.95, impact=0.005)
 
   portvals /= portvals.values[0]
   benchmark /= benchmark.values[0]
@@ -103,7 +111,6 @@ def test_code(symbol="JPM", sv = 100000):
   ymin = min([portvals.min().values[0], benchmark.min().values[0]])
   ymax = max([portvals.max().values[0], benchmark.max().values[0]])
 
-  pd.plotting.register_matplotlib_converters()
   plt.title('Manual Strategy vs. JPM Benchmark for out-samples period')
   plt.xticks(rotation=45)
   plt.plot(portvals, label="Manual Strategy", color="red")
