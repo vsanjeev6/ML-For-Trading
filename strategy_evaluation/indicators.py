@@ -60,7 +60,7 @@ def get_PPO(prices):
 def get_ROC(prices, rate):
   SMA = prices.rolling(rate).mean()
   close = prices
-  ROC = ((close - close.shift(periods=rate-1))/close.shift(periods=rate-1))*100
+  ROC = (prices / prices.shift(rate)) - 1
 
   return ROC
 

@@ -40,7 +40,7 @@ class ManualStrategy:
     long = []
 
     for i in range(len(prices)):
-      if ((BBP[i] >= 0.75 and CCI[i] >= 100) or ROC[i] >= 25) and holding >= 0:
+      if ((BBP[i] >= 0.75 and CCI[i] >= 100) or ROC[i] >= 0.2) and holding >= 0:
         #sell
         if holding==0:
           df_trades.loc[prices.index[i]] = -delta
@@ -49,7 +49,7 @@ class ManualStrategy:
         short.append(prices.index[i])
         holding += df_trades.loc[prices.index[i]].values[0]
 
-      elif ((BBP[i] <= 0.25 and CCI[i] <= -100) or ROC[i] <= -25) and holding <= 0:
+      elif ((BBP[i] <= 0.25 and CCI[i] <= -100) or ROC[i] <= -0.2) and holding <= 0:
         #buy
         if holding==0:
           df_trades.loc[prices.index[i]] = delta
