@@ -22,14 +22,12 @@ GT honor code violation.
   		  	   		  		 			  		 			     			  	 
 -----do not edit anything above this line---  		  	   		  		 			  		 			     			  	 
   		  	   		  		 			  		 			     			  	 
-Student Name: Tucker Balch (replace with your name)  		  	   		  		 			  		 			     			  	 
-GT User ID: tb34 (replace with your User ID)  		  	   		  		 			  		 			     			  	 
-GT ID: 900897987 (replace with your GT ID)  		  	   		  		 			  		 			     			  	 
+Student Name: Vaishnavi Sanjeev  		  	   		  		 			  		 			     			  	 
+GT User ID: vsanjeev6  		  	   		  		 			  		 			     			  	 
+GT ID: 903797718   		  	   		  		 			  		 			     			  	 
 """
 
 import datetime as dt
-import random
-
 import pandas as pd
 import util as ut
 import QLearner as ql
@@ -50,7 +48,8 @@ class StrategyLearner(object):
     :type commission: float
     """
     def author(self):
-        return "pcometti3"  # replace tb34 with your Georgia Tech username
+        return 'vsanjeev6'
+
     # constructor
     def __init__(self, verbose=False, impact=0.0, commission=0.0):
         """
@@ -61,8 +60,7 @@ class StrategyLearner(object):
         self.commission = commission
         self.ql = ql.QLearner(num_states=1000, num_actions=3, alpha=0.1, gamma=0.15, rar=0.2, radr=0.99, dyna=0, verbose=False)
 
-        # this method should create a QLearner, and train it for trading
-
+    # this method should create a QLearner, and train it for trading
     def add_evidence(
             self,
             symbol="IBM",
@@ -98,8 +96,8 @@ class StrategyLearner(object):
 
         indicators = pd.concat([bbp, CCI, MOM], axis=1)
         indicators = indicators.loc[sd:]
-        indicators['state'] = indicators['BBP'].astype(str) + indicators['CCI'].astype(str) + \
-                              indicators['MOM'].astype(str)
+        indicators['state'] = indicators['BBP'].astype(str) + indicators['CCI'].astype(str) + indicators['MOM'].astype(str)
+        #print(indicators)
         initial_state = indicators.iloc[0]['state']
 
         self.ql.querysetstate(int(float(initial_state)))
@@ -111,37 +109,38 @@ class StrategyLearner(object):
         df_trades_copy = df_trades.copy()
         i = 0
 
-        while i < 100: #30 iteration limit
+        # Run through the training data several times to learn
+        while i < 100:
             i += 1
             holdings = 0
-
+            # Check for Convergence
             if i>5 and df_trades.equals(df_trades_copy):
-                # convergence
                 break
-
             df_trades_copy = df_trades.copy()
 
             for index in range(len(prices)):
+                # Impact is part of rewards computation
                 reward = holdings * daily_price_change.loc[prices.index[index]] * (1 - self.impact)
+                # Query function updates Q-Table
                 a = self.ql.query(int(float(indicators.loc[prices.index[index]]['state'])), reward)
+                # Net holdings are constrained to -1000, 0, 1000
                 if (a == 1) and (holdings < 1000):
                     #BUY
-                    if holdings == 0:
+                    if holdings == 0: # A long trade = +1000
                         df_trades.loc[prices.index[index]] = 1000
-                    elif holdings == -1000:
+                    elif holdings == -1000: # If current holdings = -1000, a long trade = 2000 (switching from short to long)
                         df_trades.loc[prices.index[index]] = 2000
                     holdings += df_trades.loc[prices.index[index]].values[0]
 
                 elif (a == 2) and (holdings > -1000):
                     #SELL
-                    if holdings == 0:
+                    if holdings == 0: # A short trade = -1000
                         df_trades.loc[prices.index[index]] = -1000
-                    elif holdings == 1000:
+                    elif holdings == 1000: # If current holdings = 1000, a short trade = -2000 (switching from long to short)
                         df_trades.loc[prices.index[index]] = -2000
                     holdings += df_trades.loc[prices.index[index]].values[0]
 
-            # this method should use the existing policy and test it against new data
-
+    # this method should use the existing policy and test it against new data
     def testPolicy(
             self,
             symbol="IBM",
@@ -185,10 +184,8 @@ class StrategyLearner(object):
 
         indicators = pd.concat([bbp, CCI, MOM], axis=1)
         indicators = indicators.loc[sd:]
-        indicators['state'] = indicators['BBP'].astype(str) + indicators['CCI'].astype(str) + \
-                              indicators['MOM'].astype(str)
+        indicators['state'] = indicators['BBP'].astype(str) + indicators['CCI'].astype(str) + indicators['MOM'].astype(str)
         initial_state = indicators.iloc[0]['state']
-
 
         self.ql.querysetstate(int(float(initial_state)))
 
@@ -197,6 +194,7 @@ class StrategyLearner(object):
         holdings = 0
 
         for index in range(len(prices)):
+            # Querysetstate function does not update the Q-Table
             a = self.ql.querysetstate(int(float(indicators.loc[prices.index[index]]['state'])))
             if (a == 1) and (holdings < 1000):
                 # BUY
@@ -213,7 +211,6 @@ class StrategyLearner(object):
                 elif holdings == 1000:
                     df_trades.loc[prices.index[index]] = -2000
                 holdings += df_trades.loc[prices.index[index]].values[0]
-
         return df_trades
 
 def get_daily_returns(port_val):
@@ -224,32 +221,31 @@ def get_daily_returns(port_val):
 def discretize(data, steps=10):
     stepsize = round(len(data) / steps)
     data1 = data.sort_values()
-    treshold = np.zeros(steps - 1)
+    threshold = np.zeros(steps - 1)
     for i in range(steps - 1):
-        treshold[i] = data1.iloc[(i + 1) * stepsize]
+        threshold[i] = data1.iloc[(i + 1) * stepsize]
 
     for i in range(len(data)):
-        if data.iloc[i] <= treshold[0]:
+        if data.iloc[i] <= threshold[0]:
             data.iloc[i] = 0
-        elif treshold[0] < data.iloc[i] <= treshold[1]:
+        elif threshold[0] < data.iloc[i] <= threshold[1]:
             data.iloc[i] = 1
-        elif treshold[1] < data.iloc[i] <= treshold[2]:
+        elif threshold[1] < data.iloc[i] <= threshold[2]:
             data.iloc[i] = 2
-        elif treshold[2] < data.iloc[i] <= treshold[3]:
+        elif threshold[2] < data.iloc[i] <= threshold[3]:
             data.iloc[i] = 3
-        elif treshold[3] < data.iloc[i] <= treshold[4]:
+        elif threshold[3] < data.iloc[i] <= threshold[4]:
             data.iloc[i] = 4
-        elif treshold[4] < data.iloc[i] <= treshold[5]:
+        elif threshold[4] < data.iloc[i] <= threshold[5]:
             data.iloc[i] = 5
-        elif treshold[5] < data.iloc[i] <= treshold[6]:
+        elif threshold[5] < data.iloc[i] <= threshold[6]:
             data.iloc[i] = 6
-        elif treshold[6] < data.iloc[i] <= treshold[7]:
+        elif threshold[6] < data.iloc[i] <= threshold[7]:
             data.iloc[i] = 7
-        elif treshold[7] < data.iloc[i] <= treshold[8]:
+        elif threshold[7] < data.iloc[i] <= threshold[8]:
             data.iloc[i] = 8
         else:
             data.iloc[i] = 9
-
     return (data.astype(int)).to_frame()
 
 

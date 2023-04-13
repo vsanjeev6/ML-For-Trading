@@ -8,14 +8,14 @@ import matplotlib.pyplot as plt
 pd.plotting.register_matplotlib_converters()
 
 def author():
-    return "vsanjeev6"
+    return 'vsanjeev6'
 
 def test_code():
     ms = ManualStrategy()
-    sl = StrategyLearner(verbose = False, impact = 0.005, commission=0.0)
-    sl.add_evidence(symbol='JPM', sd=dt.datetime(2008, 1, 1), ed=dt.datetime(2009, 12, 31))
-    df_out_trades = sl.testPolicy(symbol='JPM', sd=dt.datetime(2010, 1, 1), ed=dt.datetime(2011, 12, 31))
-    df_in_trades = sl.testPolicy(symbol='JPM', sd=dt.datetime(2008, 1, 1), ed=dt.datetime(2009, 12, 31))
+    sl = StrategyLearner(verbose = False, impact = 0.0, commission=0.0)
+    sl.add_evidence(symbol='JPM', sd=dt.datetime(2008, 1, 1), ed=dt.datetime(2009, 12, 31), sv = 100000)
+    df_out_trades = sl.testPolicy(symbol='JPM', sd=dt.datetime(2010, 1, 1), ed=dt.datetime(2011, 12, 31), sv = 100000)
+    df_in_trades = sl.testPolicy(symbol='JPM', sd=dt.datetime(2008, 1, 1), ed=dt.datetime(2009, 12, 31), sv = 100000)
 
     df_trades, _, _ = ms.testPolicy(symbol="JPM", sd=dt.datetime(2008, 1, 1), ed=dt.datetime(2009, 12, 31),sv=100000)
     df_benchmark = pd.DataFrame(0, index=df_trades.index, columns=["JPM"])

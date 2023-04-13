@@ -3,7 +3,7 @@ import experiment2 as ex2
 import ManualStrategy as ms
 
 def author():
-    return "pcometti3"  # replace tb34 with your Georgia Tech username
+    return 'vsanjeev6'
 
 def run():
     ms.test_code(symbol="JPM", sv=100000)

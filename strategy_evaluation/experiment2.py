@@ -4,9 +4,8 @@ from StrategyLearner import StrategyLearner
 import marketsimcode as ms
 import matplotlib.pyplot as plt
 
-
 def author():
-    return "pcometti3"  # replace tb34 with your Georgia Tech username
+    return 'vsanjeev6'
 
 def test_code():
     sl = StrategyLearner(verbose = False, impact = 0)
