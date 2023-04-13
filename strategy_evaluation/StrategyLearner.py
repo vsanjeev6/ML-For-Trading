@@ -91,15 +91,15 @@ class StrategyLearner(object):
         prices = prices_all[syms]  # only portfolio symbols
         prices_SPY = prices_all["SPY"]  # only SPY, for comparison later
 
-        bbp, CCI, _, ROC, _ = ind.get_indicators(symbol, sd, ed)
+        bbp, CCI, MOM = ind.get_indicators(symbol, sd, ed)
         bbp = discretize(bbp).rename({symbol:'BBP'}, axis=1)
         CCI = discretize(CCI).rename({symbol:'CCI'}, axis=1)
-        ROC = discretize(ROC).rename({symbol:'ROC'}, axis=1)
+        MOM = discretize(MOM).rename({symbol:'MOM'}, axis=1)
 
-        indicators = pd.concat([bbp, CCI, ROC], axis=1)
+        indicators = pd.concat([bbp, CCI, MOM], axis=1)
         indicators = indicators.loc[sd:]
         indicators['state'] = indicators['BBP'].astype(str) + indicators['CCI'].astype(str) + \
-                              indicators['ROC'].astype(str)
+                              indicators['MOM'].astype(str)
         initial_state = indicators.iloc[0]['state']
 
         self.ql.querysetstate(int(float(initial_state)))
@@ -177,16 +177,16 @@ class StrategyLearner(object):
         prices = prices_all[syms]  # only portfolio symbols
         prices_SPY = prices_all["SPY"]  # only SPY, for comparison later
 
-        bbp, CCI, _, ROC, _ = ind.get_indicators(symbol, sd, ed)
+        bbp, CCI, MOM = ind.get_indicators(symbol, sd, ed)
 
         bbp = discretize(bbp).rename({symbol: 'BBP'}, axis=1)
         CCI = discretize(CCI).rename({symbol: 'CCI'}, axis=1)
-        ROC = discretize(ROC).rename({symbol: 'ROC'}, axis=1)
+        MOM = discretize(MOM).rename({symbol: 'MOM'}, axis=1)
 
-        indicators = pd.concat([bbp, CCI, ROC], axis=1)
+        indicators = pd.concat([bbp, CCI, MOM], axis=1)
         indicators = indicators.loc[sd:]
         indicators['state'] = indicators['BBP'].astype(str) + indicators['CCI'].astype(str) + \
-                              indicators['ROC'].astype(str)
+                              indicators['MOM'].astype(str)
         initial_state = indicators.iloc[0]['state']
 
 

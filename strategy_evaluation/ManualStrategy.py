@@ -29,10 +29,10 @@ class ManualStrategy:
     lookback = 20
 
     df_trades = pd.DataFrame(0, index=prices.index, columns=[symbol])
-
-    BBP = ind.get_bbp(lookback, prices)
+    print(prices)
+    BBP = ind.get_BBP(lookback, prices)
     CCI = ind.get_CCI(symbol, sd, ed, lookback, prices)
-    ROC = ind.get_ROC(prices, lookback)
+    ROC = ind.get_MOM(prices, lookback)
 
     holding = 0
     delta = 1000
