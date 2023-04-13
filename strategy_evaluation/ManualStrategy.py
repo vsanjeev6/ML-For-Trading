@@ -1,4 +1,8 @@
 """
+Student Name: Vaishnavi Sanjeev
+GT User ID: vsanjeev6
+GT ID: 903797718
+
 Code implementing the ManualStrategy object
 """
 
@@ -27,139 +31,136 @@ class ManualStrategy:
     prices_all = get_data([symbol], dates)
     prices = prices_all[symbol]
     lookback = 20
-
     df_trades = pd.DataFrame(0, index=prices.index, columns=[symbol])
-    print(prices)
+
+    # Get the indicator values
     BBP = ind.get_BBP(lookback, prices)
     CCI = ind.get_CCI(symbol, sd, ed, lookback, prices)
-    ROC = ind.get_MOM(prices, lookback)
+    MOM = ind.get_MOM(prices, lookback)
 
     holding = 0
-    delta = 1000
+    trade = 1000
     short = []
     long = []
 
+    """
+    Simple Logic for Manual Strategy
+    """
     for i in range(len(prices)):
-      if ((BBP[i] >= 0.75 and CCI[i] >= 100) or ROC[i] >= 0.2) and holding >= 0:
-        #sell
+      # SELL/SHORT
+      if (BBP[i] >= 0.75 or CCI[i] >= 100 and MOM[i] <= -0.05) and holding >= 0:
         if holding==0:
-          df_trades.loc[prices.index[i]] = -delta
+          df_trades.loc[prices.index[i]] = -trade
         elif holding==1000:
-          df_trades.loc[prices.index[i]] = -delta*2
+          df_trades.loc[prices.index[i]] = -trade*2
         short.append(prices.index[i])
         holding += df_trades.loc[prices.index[i]].values[0]
-
-      elif ((BBP[i] <= 0.25 and CCI[i] <= -100) or ROC[i] <= -0.2) and holding <= 0:
-        #buy
+      # BUY/LONG
+      elif (BBP[i] <= 0.25 or CCI[i] <= -100 and MOM[i] >= 0.05) and holding <= 0:
         if holding==0:
-          df_trades.loc[prices.index[i]] = delta
+          df_trades.loc[prices.index[i]] = trade
         elif holding==-1000:
-          df_trades.loc[prices.index[i]] = delta*2
+          df_trades.loc[prices.index[i]] = trade*2
         long.append(prices.index[i])
         holding += df_trades.loc[prices.index[i]].values[0]
-
-
     return df_trades, short, long
 
 
 def test_code(symbol="JPM", sv = 100000):
+  ms = ManualStrategy()
+
+  """
+  In-Sample
+  """
   sd = dt.datetime(2008, 1, 1)
   ed = dt.datetime(2009, 12, 31)
-  ms = ManualStrategy()
   df_trades, short, long = ms.testPolicy(symbol, sd, ed, sv)
-  df_benchmark = pd.DataFrame(0, index=df_trades.index, columns=[symbol])
-  df_benchmark.loc[df_benchmark.index[0]] = 1000
-  df_benchmark.loc[df_benchmark.index[len(df_benchmark.index)-1]] = -1000
 
   portvals = mktsim.compute_portvals(df_trades, sv,commission=9.95, impact=0.005)
-  benchmark = mktsim.compute_portvals(df_benchmark, sv, commission=9.95, impact=0.005)
+  benchmark = get_benchmark(sd, ed, sv)
 
   portvals /= portvals.values[0]
   benchmark /= benchmark.values[0]
 
-  compute_stats(portvals, benchmark, title="IN-SAMPLE")
+  print_stats(portvals, benchmark)
+  plotting_utility_function(benchmark, portvals, short, long,"Manual Strategy Vs. JPM Benchmark for In-Sample Period", "Date",
+                            "Normalized Portfolio Value", "images/ManualStrategy1.png")
 
-  ymin=min([portvals.min().values[0], benchmark.min().values[0]])
-  ymax=max([portvals.max().values[0], benchmark.max().values[0]])
-
-  plt.title('Manual Strategy vs. JPM Benchmark for in-sample period')
-  plt.xticks(rotation=45)
-  plt.plot(portvals, label="Manual Strategy", color="red")
-  plt.plot(benchmark, label="JPM Benchmark", color="purple")
-  plt.vlines(x=short, ymin=ymin, ymax=ymax, color='black', linewidth=1, label='short entry')
-  plt.vlines(x=long, ymin=ymin, ymax=ymax, color='b', linewidth=1, label='long entry')
-  plt.grid()
-  plt.legend()
-  plt.savefig("images/ManualStrategy1", dpi=300, bbox_inches='tight')
-  plt.clf()
-
+  """
+  Out-Sample
+  """
   sd = dt.datetime(2010, 1, 1)
   ed = dt.datetime(2011, 12, 31)
   df_trades, short, long = ms.testPolicy(symbol, sd, ed, sv)
-  df_benchmark = pd.DataFrame(0, index=df_trades.index, columns=[symbol])
-  df_benchmark.loc[df_benchmark.index[0]] = 1000
-  df_benchmark.loc[df_benchmark.index[len(df_benchmark.index) - 1]] = -1000
 
   portvals = mktsim.compute_portvals(df_trades, sv,commission=9.95, impact=0.005)
-  benchmark = mktsim.compute_portvals(df_benchmark, sv,commission=9.95, impact=0.005)
+  benchmark = get_benchmark(sd, ed, sv)
 
   portvals /= portvals.values[0]
   benchmark /= benchmark.values[0]
 
-  compute_stats(portvals, benchmark, title="OUT-SAMPLE")
+  print_stats(portvals, benchmark)
+  plotting_utility_function(benchmark, portvals, short, long,"Manual Strategy Vs. JPM Benchmark for Out-Sample Period", "Date",
+                            "Normalized Portfolio Value", "images/ManualStrategy2.png")
 
-  ymin = min([portvals.min().values[0], benchmark.min().values[0]])
-  ymax = max([portvals.max().values[0], benchmark.max().values[0]])
 
-  plt.title('Manual Strategy vs. JPM Benchmark for out-samples period')
-  plt.xticks(rotation=45)
+def get_benchmark(sd, ed, sv):
+  df_trades = get_data(['SPY'], pd.date_range(sd, ed))
+  df_trades = df_trades.rename(columns={'SPY': 'JPM'}).astype({'JPM': 'int32'})
+  df_trades[:] = 0
+  df_trades.loc[df_trades.index[0]] = 1000
+  portvals = mktsim.compute_portvals(df_trades, sv, commission=9.95, impact=0.005)
+  return portvals
+
+
+def print_stats(portvals, benchmark):
+  benchmark, theoretical = benchmark['value'], portvals['value']
+
+  # Cumulative Return
+  cr_ben = benchmark[-1] / benchmark[0] - 1
+  cr_the = theoretical[-1] / theoretical[0] - 1
+
+  # Daily Return
+  dr_ben = (benchmark / benchmark.shift(1) - 1).iloc[1:]
+  dr_the = (theoretical / theoretical.shift(1) - 1).iloc[1:]
+
+  # Stdev of daily returns
+  sddr_ben = dr_ben.std()
+  sddr_the = dr_the.std()
+
+  # Mean of daily returns
+  adr_ben = dr_ben.mean()
+  adr_the = dr_the.mean()
+
+  print("======Manual Strategy======")
+  print("Cumulative Return: " + str(cr_the))
+  print("Stdev of daily returns: " + str(sddr_the))
+  print("Mean of daily returns: " + str(adr_the))
+  print("")
+  print("======Benchmark======")
+  print("Cumulative Return: " + str(cr_ben))
+  print("Stdev of daily returns: " + str(sddr_ben))
+  print("Mean of daily returns: " + str(adr_ben))
+
+def plotting_utility_function(benchmark, portvals, short, long,title,xlabel,ylabel,fig_name):
+
+  # Ensures the verical lines drawn fall within the range of y-values of the graph and does not extend infinitely
+  ymin=min([portvals.min().values[0], benchmark.min().values[0]])
+  ymax=max([portvals.max().values[0], benchmark.max().values[0]])
+
+  plt.title(title)
+  plt.xticks(rotation=30)
   plt.plot(portvals, label="Manual Strategy", color="red")
   plt.plot(benchmark, label="JPM Benchmark", color="purple")
-  plt.vlines(x=short, ymin=ymin, ymax=ymax, color='black', linewidth=1, label='short entry')
-  plt.vlines(x=long, ymin=ymin, ymax=ymax, color='b', linewidth=1, label='long entry')
+  plt.vlines(x=short, ymin=ymin, ymax=ymax, color='black', linewidth=1, label='Short')
+  plt.vlines(x=long, ymin=ymin, ymax=ymax, color='blue', linewidth=1, label='Long')
+  plt.xlabel(xlabel)
+  plt.ylabel(ylabel)
   plt.grid()
   plt.legend()
-  plt.savefig("images/ManualStrategy2", dpi=300, bbox_inches='tight')
+  plt.savefig(fig_name, dpi=300, bbox_inches='tight')
   plt.clf()
 
-def compute_stats(portvals, benchmark, title):
-  d_returns1 = portvals.copy()
-  for i in range(1, len(d_returns1)):
-    d_returns1.loc[d_returns1.index[i]] = (portvals.values[i - 1][0] - portvals.values[i][0]) / portvals.values[i - 1][0]
-  d_returns1 = d_returns1[1:]
-
-  # Below are desired output values
-
-  # Cumulative return (final - initial) - 1
-  cum_ret1 = (portvals.values[-1][0] / portvals.values[0][0]) - 1
-  # Average daily return
-  avg_daily_ret1 = d_returns1.mean()
-  # Standard deviation of daily return
-  std_daily_ret1 = d_returns1.std()
-
-  d_returns2 = benchmark.copy()
-  for i in range(1, len(d_returns2)):
-    d_returns2.loc[d_returns2.index[i]] = (benchmark.values[i - 1][0] - benchmark.values[i][0]) / benchmark.values[i - 1][0]
-  d_returns2 = d_returns2[1:]
-
-  # Cumulative return (final - initial) - 1
-  cum_ret2 = (benchmark.values[-1][0] / benchmark.values[0][0]) - 1
-  # Average daily return
-  avg_daily_ret2 = d_returns2.mean()
-  # Standard deviation of daily return
-  std_daily_ret2 = d_returns2.std()
-
-  print(title)
-  print()
-  print("Cumulative Return of Portfolio: %.6f" % cum_ret1)
-  print("Cumulative Return of Benchmark: %.6f" % cum_ret2)
-  print()
-  print("Standard Deviation of Portfolio: %.6f" % std_daily_ret1)
-  print("Standard Deviation of Benchmark: %.6f" % std_daily_ret2)
-  print()
-  print("Average Daily Return of Portfolio: %.6f" % -avg_daily_ret1)
-  print("Average Daily Return of Benchmark: %.6f" % -avg_daily_ret2)
-  print()
-
 if __name__ == "__main__":
-  print("Manual Strategy")
+  pass
+  #print("Manual Strategy")
