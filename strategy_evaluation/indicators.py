@@ -73,5 +73,6 @@ def get_indicators(symbol="JPM", sd = dt.datetime(2008, 1, 1), ed = dt.datetime(
   return BBP, CCI, MOM
 
 if __name__ == "__main__":
-  # get_indicators()
   pass
+  # get_indicators()
+
