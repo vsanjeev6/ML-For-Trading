@@ -42,13 +42,12 @@ class ManualStrategy:
     trade = 1000
     short = []
     long = []
-
     """
     Simple Logic for Manual Strategy
     """
     for i in range(len(prices)):
       # SELL/SHORT
-      if (BBP[i] >= 0.75 or CCI[i] >= 100 and MOM[i] <= -0.05) and holding >= 0:
+      if (BBP[i] >= 0.8 or CCI[i] >= 100 and MOM[i] <= -0.05) and holding >= 0:
         if holding==0:
           df_trades.loc[prices.index[i]] = -trade
         elif holding==1000:
@@ -56,7 +55,7 @@ class ManualStrategy:
         short.append(prices.index[i])
         holding += df_trades.loc[prices.index[i]].values[0]
       # BUY/LONG
-      elif (BBP[i] <= 0.25 or CCI[i] <= -100 and MOM[i] >= 0.05) and holding <= 0:
+      elif (BBP[i] <= 0.2 or CCI[i] <= -100 and MOM[i] >= 0.05) and holding <= 0:
         if holding==0:
           df_trades.loc[prices.index[i]] = trade
         elif holding==-1000:
