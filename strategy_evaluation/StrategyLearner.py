@@ -32,8 +32,6 @@ import pandas as pd
 import util as ut
 import QLearner as ql
 import indicators as ind
-import numpy as np
-
 
 class StrategyLearner(object):
     """
@@ -90,9 +88,9 @@ class StrategyLearner(object):
         prices_SPY = prices_all["SPY"]  # only SPY, for comparison later
 
         bbp, CCI, MOM = ind.get_indicators(symbol, sd, ed)
-        bbp = discretize(bbp).rename({symbol:'BBP'}, axis=1)
-        CCI = discretize(CCI).rename({symbol:'CCI'}, axis=1)
-        MOM = discretize(MOM).rename({symbol:'MOM'}, axis=1)
+        bbp = discretize(bbp, prices, symbol).rename({symbol:'BBP'}, axis=1)
+        CCI = discretize(CCI, prices, symbol).rename({symbol:'CCI'}, axis=1)
+        MOM = discretize(MOM, prices, symbol).rename({symbol:'MOM'}, axis=1)
 
         indicators = pd.concat([bbp, CCI, MOM], axis=1)
         indicators = indicators.loc[sd:]
@@ -101,11 +99,8 @@ class StrategyLearner(object):
         initial_state = indicators.iloc[0]['state']
 
         self.ql.querysetstate(int(float(initial_state)))
-
         df_trades = pd.DataFrame(0, index=prices.index, columns=[symbol])
-
         daily_price_change = get_daily_returns(prices)
-
         df_trades_copy = df_trades.copy()
         i = 0
 
@@ -177,10 +172,9 @@ class StrategyLearner(object):
         prices_SPY = prices_all["SPY"]  # only SPY, for comparison later
 
         bbp, CCI, MOM = ind.get_indicators(symbol, sd, ed)
-
-        bbp = discretize(bbp).rename({symbol: 'BBP'}, axis=1)
-        CCI = discretize(CCI).rename({symbol: 'CCI'}, axis=1)
-        MOM = discretize(MOM).rename({symbol: 'MOM'}, axis=1)
+        bbp = discretize(bbp, prices, symbol).rename({symbol: 'BBP'}, axis=1)
+        CCI = discretize(CCI, prices, symbol).rename({symbol: 'CCI'}, axis=1)
+        MOM = discretize(MOM, prices, symbol).rename({symbol: 'MOM'}, axis=1)
 
         indicators = pd.concat([bbp, CCI, MOM], axis=1)
         indicators = indicators.loc[sd:]
@@ -188,9 +182,7 @@ class StrategyLearner(object):
         initial_state = indicators.iloc[0]['state']
 
         self.ql.querysetstate(int(float(initial_state)))
-
         df_trades = pd.DataFrame(0, index=prices.index, columns=[symbol])
-
         holdings = 0
 
         for index in range(len(prices)):
@@ -218,36 +210,14 @@ def get_daily_returns(port_val):
     daily_returns[1:] = (port_val[1:] / port_val[:-1].values) - 1
     return daily_returns
 
-def discretize(data, steps=10):
-    stepsize = round(len(data) / steps)
-    data1 = data.sort_values()
-    threshold = np.zeros(steps - 1)
-    for i in range(steps - 1):
-        threshold[i] = data1.iloc[(i + 1) * stepsize]
-
-    for i in range(len(data)):
-        if data.iloc[i] <= threshold[0]:
-            data.iloc[i] = 0
-        elif threshold[0] < data.iloc[i] <= threshold[1]:
-            data.iloc[i] = 1
-        elif threshold[1] < data.iloc[i] <= threshold[2]:
-            data.iloc[i] = 2
-        elif threshold[2] < data.iloc[i] <= threshold[3]:
-            data.iloc[i] = 3
-        elif threshold[3] < data.iloc[i] <= threshold[4]:
-            data.iloc[i] = 4
-        elif threshold[4] < data.iloc[i] <= threshold[5]:
-            data.iloc[i] = 5
-        elif threshold[5] < data.iloc[i] <= threshold[6]:
-            data.iloc[i] = 6
-        elif threshold[6] < data.iloc[i] <= threshold[7]:
-            data.iloc[i] = 7
-        elif threshold[7] < data.iloc[i] <= threshold[8]:
-            data.iloc[i] = 8
-        else:
-            data.iloc[i] = 9
-    return (data.astype(int)).to_frame()
-
+def discretize(data, prices, symbol, steps=10):
+    labels = range(steps)
+    discret_data = pd.DataFrame(0, index=prices.index,columns=[symbol])
+    # In-built pandas function for discretization
+    discret_data[symbol] = pd.qcut(data, q=steps, labels=labels, precision=0, duplicates='drop')
+    discret_data.fillna(0, inplace=True)
+    #print("Discretized Data",discret_data)
+    return discret_data
 
 if __name__ == "__main__":
     print("One does not simply think up a strategy")
