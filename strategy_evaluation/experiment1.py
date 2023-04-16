@@ -33,27 +33,33 @@ def test_code():
 
     # Train Strategy Learner on In-Sample Data
     sl.add_evidence(symbol='JPM', sd=dt.datetime(2008, 1, 1), ed=dt.datetime(2009, 12, 31), sv = 100000)
-    df_in_trades = sl.testPolicy(symbol='JPM', sd=dt.datetime(2008, 1, 1), ed=dt.datetime(2009, 12, 31), sv=100000)
-    df_out_trades = sl.testPolicy(symbol='JPM', sd=dt.datetime(2010, 1, 1), ed=dt.datetime(2011, 12, 31), sv = 100000)
+    # Query Strategy Learner on In-Sample Data
+    in_sample_trades = sl.testPolicy(symbol='JPM', sd=dt.datetime(2008, 1, 1), ed=dt.datetime(2009, 12, 31), sv=100000)
+    # Query Strategy Learner on Out-Sample Data
+    out_sample_trades = sl.testPolicy(symbol='JPM', sd=dt.datetime(2010, 1, 1), ed=dt.datetime(2011, 12, 31), sv = 100000)
 
     """
     In-Sample
     """
+    # Query Manual Strategy on In-Sample Data
     df_trades, _, _ = ms.testPolicy(symbol="JPM", sd=dt.datetime(2008, 1, 1), ed=dt.datetime(2009, 12, 31),sv=100000)
     benchmark = get_benchmark(sd=dt.datetime(2008, 1, 1), ed=dt.datetime(2009, 12, 31),sv=100000)
-    in_sample = mktsim.compute_portvals(df_in_trades, start_val=100000, commission=9.95, impact=0.005)
+    in_sample_portval = mktsim.compute_portvals(in_sample_trades, start_val=100000, commission=9.95, impact=0.005)
+    # Portfolio Value for Manual Strategy trades
     portvals = mktsim.compute_portvals(df_trades, start_val=100000, commission=9.95, impact=0.005)
-    plotting_utility_function(benchmark, portvals, in_sample, "Manual Strategy Vs. Strategy Learner Vs. Benchmark (In-Sample JPM)", "Date",
+    plotting_utility_function(benchmark, portvals, in_sample_portval, "Manual Strategy Vs. Strategy Learner Vs. Benchmark (In-Sample JPM)", "Date",
                               "Normalized Portfolio Value", "images/Exp1_In_Sample.png")
 
     """
     Out-Sample
     """
+    # Query Manual Strategy on Out-Sample Data
     df_trades, _, _ = ms.testPolicy(symbol="JPM", sd=dt.datetime(2010, 1, 1), ed=dt.datetime(2011, 12, 31), sv=100000)
     benchmark = get_benchmark(sd=dt.datetime(2010, 1, 1), ed=dt.datetime(2011, 12, 31), sv=100000)
-    out_sample = mktsim.compute_portvals(df_out_trades, start_val=100000, commission=9.95, impact=0.005)
-    portvals = mktsim.compute_portvals(df_trades, start_val=100000)
-    plotting_utility_function(benchmark, portvals, out_sample, "Manual Strategy Vs. Strategy Learner Vs. Benchmark (Out-of-Sample JPM)", "Date",
+    out_sample_portval = mktsim.compute_portvals(out_sample_trades, start_val=100000, commission=9.95, impact=0.005)
+    # Portfolio Value for Manual Strategy trades
+    portvals = mktsim.compute_portvals(df_trades, start_val=100000, commission=9.95, impact=0.005)
+    plotting_utility_function(benchmark, portvals, out_sample_portval, "Manual Strategy Vs. Strategy Learner Vs. Benchmark (Out-of-Sample JPM)", "Date",
                               "Normalized Portfolio Value", "images/Exp1_Out_Sample.png")
 
 """
