@@ -83,7 +83,9 @@ def print_stats(portvals):
 
   print("~~~~~~~~~~Experiment 2~~~~~~~~~~")
   print("Cumulative Return: " + str(cr))
-  print("Sharpe Ratio:" + str(sr))
+  print("Stdev of daily returns: " + str(sddr))
+  print("Mean of daily returns: " + str(adr))
+  print("Sharpe Ratio: " + str(sr))
 
 if __name__ == "__main__":
     pass
