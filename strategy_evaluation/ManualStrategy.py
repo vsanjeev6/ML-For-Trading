@@ -124,8 +124,8 @@ def print_stats(portvals, benchmark):
   dr_the = (theoretical / theoretical.shift(1) - 1).iloc[1:]
 
   # Stdev of daily returns
-  sddr_ben = dr_ben.std()
-  sddr_the = dr_the.std()
+  sddr_ben = dr_ben.std(ddof=1)
+  sddr_the = dr_the.std(ddof=1)
 
   # Mean of daily returns
   adr_ben = dr_ben.mean()
