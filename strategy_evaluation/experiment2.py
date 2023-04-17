@@ -81,11 +81,13 @@ def print_stats(portvals):
   # Sharpe Ratio
   sr = np.sqrt(252) * (adr / sddr)
 
+  """
   print("~~~~~~~~~~Experiment 2~~~~~~~~~~")
   print("Cumulative Return: " + str(cr))
   print("Stdev of daily returns: " + str(sddr))
   print("Mean of daily returns: " + str(adr))
   print("Sharpe Ratio: " + str(sr))
+  """
 
 if __name__ == "__main__":
     pass

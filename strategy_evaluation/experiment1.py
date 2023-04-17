@@ -29,7 +29,7 @@ def author():
 def test_code():
     # Create objects of Manual Strategy and Strategy Learner
     ms = ManualStrategy()
-    sl = StrategyLearner(verbose = False, impact = 0.0, commission=0.0)
+    sl = StrategyLearner(verbose = False, impact = 0.005, commission=9.95)
 
     # Train Strategy Learner on In-Sample Data
     sl.add_evidence(symbol='JPM', sd=dt.datetime(2008, 1, 1), ed=dt.datetime(2009, 12, 31), sv = 100000)

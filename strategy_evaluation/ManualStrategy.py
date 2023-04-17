@@ -131,6 +131,7 @@ def print_stats(portvals, benchmark):
   adr_ben = dr_ben.mean()
   adr_the = dr_the.mean()
 
+  """
   print("======Manual Strategy======")
   print("Cumulative Return: " + str(cr_the))
   print("Stdev of daily returns: " + str(sddr_the))
@@ -140,6 +141,7 @@ def print_stats(portvals, benchmark):
   print("Cumulative Return: " + str(cr_ben))
   print("Stdev of daily returns: " + str(sddr_ben))
   print("Mean of daily returns: " + str(adr_ben))
+  """
 
 def plotting_utility_function(benchmark, portvals, short, long,title,xlabel,ylabel,fig_name):
 
